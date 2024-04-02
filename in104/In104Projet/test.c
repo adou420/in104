@@ -1,2 +1,1 @@
-#dfsdfqs
 #include <stdio.h>
