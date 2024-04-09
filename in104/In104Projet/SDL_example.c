@@ -22,7 +22,7 @@ void render (SDL_Renderer *renderer , SDL_Texture **texture ) {
 
 
 void loadTexture ( SDL_Renderer *renderer , SDL_Texture **texture ) {
-    SDL_Surface *surface = IMG_Load( "fish_bitmap.jpg ") ;
+    SDL_Surface *surface = IMG_Load( "fish_bitmap.jpg") ;
     if ( surface == NULL) {
         fprintf( stderr , "Failed to load image : %s \n" , IMG_GetError( ) ) ;
         SDL_Quit( ) ;

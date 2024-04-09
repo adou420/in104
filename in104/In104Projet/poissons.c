@@ -45,7 +45,7 @@ struct vecteur somme_vecteurs(struct vecteur vi, struct vecteur vj)
 
 //Fonction qui détermine la direction privilégiée d_i
 
-struct vecteur distance_priv_tau(struct poisson p, struct poisson* zor, unsigned int nr, struct poisson* zoo, unsigned int no, struct poisson* zoa, unsigned int na){
+struct vecteur dir_priv_tau(struct poisson p, struct poisson* zor, unsigned int nr, struct poisson* zoo, unsigned int no, struct poisson* zoa, unsigned int na){
     struct vecteur d_i;
     struct vecteur d_r = {0, 0};
     struct vecteur d_o = {0, 0};
@@ -109,13 +109,25 @@ struct vecteur distance_priv_tau(struct poisson p, struct poisson* zor, unsigned
 //Simulation du mouvement des poissons
 
 void simulation(struct poisson* poissons,int nb_poissons,double tau, double theta)
-{
+{ 
+    //Initialisation des tableaux des voisins pour chaque zone 
+    struct poisson* zor;
+    struct poisson* zoa;
+    struct poisson* zoo;
+
     for (int i = 0; i<nb_poissons;i++) //on parcourt l'ensemble des poissons
     {
-
+        //Remplissons ces tableaux pour le poisson i 
+        for(int j = 0; i<nb_poissons; i++){
+            
+        }
+        int nb_voisins =0;
+        for (int j = 0; j<nb_poissons;j++)
+        {
+            if (int i)
+        }
     }
 }
-
 
 // Window
 void render (SDL_Renderer *renderer , SDL_Texture **texture ) {
@@ -132,7 +144,23 @@ void render (SDL_Renderer *renderer , SDL_Texture **texture ) {
 }
 
 
+void loadTexture ( SDL_Renderer *renderer , SDL_Texture **texture ) {
+    SDL_Surface *surface = IMG_Load( "fish_bitmap.jpg") ;
+    if ( surface == NULL) {
+        fprintf( stderr , "Failed to load image : %s \n" , IMG_GetError( ) ) ;
+        SDL_Quit( ) ;
+        exit( 1 ) ;
+    }
+    *texture = SDL_CreateTextureFromSurface ( renderer , surface) ;
 
+    SDL_FreeSurface ( surface ) ;
+
+    if (*texture == NULL) {
+        fprintf( stderr , "Failed to create texture : %s \n" , SDL_GetError( ) ) ;
+        SDL_Quit ( ) ;
+        exit( 1 ) ;
+    }
+}
 
 int main()
 {

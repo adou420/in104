@@ -1,7 +1,7 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -std=c99 -g
 LDFLAGS = -lSDL2 -lm -lSDL2_image
-SRC = poissons.c
+SRC = SDL_example.c
 EXECUTABLE = output
 
 all: $(EXECUTABLE)
