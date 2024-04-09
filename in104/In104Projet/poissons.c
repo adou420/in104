@@ -1,5 +1,13 @@
 #include <stdio.h>
 #include <math.h>
+#include <stdlib.h>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_image.>
+
+#define IMAGE_WIDTH 1200
+#define IMAGE_HEIGHT 800
+#define NB_POISSONS 100
+#define PI 3.14159265358979323846
 
 struct vecteur{
     double i;
@@ -96,6 +104,100 @@ struct vecteur distance_priv_tau(struct poisson p, struct poisson* zor, unsigned
     return d_i;
 }
 
-int main(){
-    printf("poisson");
+
+
+//Simulation du mouvement des poissons
+
+void simulation(struct poisson* poissons,int nb_poissons,double tau, double theta)
+{
+    for (int i = 0; i<nb_poissons;i++) //on parcourt l'ensemble des poissons
+    {
+
+    }
+}
+
+
+// Window
+void render (SDL_Renderer *renderer , SDL_Texture **texture ) {
+    SDL_SetRenderDrawColor ( renderer , 255 , 255 , 255 , 255) ;
+    SDL_RenderClear ( renderer ) ;
+
+    SDL_SetRenderDrawColor ( renderer , 0 , 0 , 255 , 255) ;
+    SDL_Rect rect = { 400 , 400 , 10 , 10 } ;
+    SDL_RenderFillRect ( renderer , &rect ) ;
+    SDL_RenderCopy ( renderer , *texture , NULL, &rect ) ;
+    // SDL RenderCopyEx ( renderer , ∗texture , NULL, &destRect , angle , NULL, SDL_FLIP_NONE);
+
+    SDL_RenderPresent ( renderer ) ;
+}
+
+
+
+
+int main()
+{
+    if ( SDL_Init (SDL_INIT_VIDEO) < 0) {
+        fprintf ( stderr , "SDL initialization failed : %s \n" , SDL_GetError( ) ) ;
+        return 1 ;
+    }
+
+    SDL_Window *window = SDL_CreateWindow( "N-Body Simulation ", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, IMAGE_WIDTH, IMAGE_HEIGHT, SDL_WINDOW_SHOWN) ;
+    if (window == NULL) {
+        fprintf ( stderr , "Window creation failed : %s \n" , SDL_GetError( ) ) ;
+        SDL_Quit ( ) ;
+        return 1 ;
+    }
+
+    SDL_Renderer *renderer = SDL_CreateRenderer (window , -1, SDL_RENDERER_ACCELERATED) ;
+    if ( renderer == NULL) {
+        fprintf( stderr , "Renderer creation failed : %s \n" , SDL_GetError( ) ) ;
+        SDL_DestroyWindow(window) ;
+        SDL_Quit ( ) ;
+        return 1 ;
+    }
+    SDL_Texture *texture ;
+    loadTexture(renderer, &texture);
+
+    
+
+    //Création des poissons 
+    struct poisson poissons[NB_POISSONS];  //tableau contenant tous les poissons
+    for (int i =0;i<NB_POISSONS; i++)  //On parcourt tous les poissons
+    {
+        //on donne à chaque poisson une position aléatoire dans la fenetre
+        poissons[i].x = (double)(rand()% IMAGE_WIDTH);
+        poissons[i].y = (double)(rand() %IMAGE_HEIGHT);
+
+        //On donne à chaque poisson un vecteur direction initial nul
+        poissons[i].v.i = 0.0;
+        poissons[i].v.j = 0.0;
+    }
+
+    SDL_Event event ;
+    int quit = 0 ;
+    while ( ! quit ) {
+        while ( SDL_PollEvent(&event ) != 0) {
+            if ( event.type == SDL_QUIT) {
+                quit = 1 ;
+            }
+        }
+
+        //Simulation du mouvement des poissons
+        simulation(poissons,)
+
+        // Render the updated positions
+        render ( renderer , &texture ) ;
+
+        // Delay to control the frame rate
+        // SDL Delay ( 1 ) ;
+    }
+
+    
+
+    SDL_DestroyRenderer ( renderer) ;
+    SDL_DestroyWindow(window) ;
+    SDL_Quit ( ) ;
+
+    return 0 ;
+
 }

@@ -7,7 +7,7 @@ EXECUTABLE = output
 all: $(EXECUTABLE)
 
 $(EXECUTABLE): $(SRC)
-	$(CC) $(CFLAGS) -o $@ $ˆ $(LDFLAGS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 run: $(EXECUTABLE)	
 	./$(EXECUTABLE)
