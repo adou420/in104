@@ -2,7 +2,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <SDL2/SDL.h>
-#include <SDL2/SDL_image.>
+#include <SDL2/SDL_image.h>
 
 #define IMAGE_WIDTH 1200
 #define IMAGE_HEIGHT 800
@@ -46,9 +46,21 @@ struct vecteur somme_vecteurs(struct vecteur vi, struct vecteur vj)
     return resultante;
 }
 
+double angle_entre_vecteurs(struct vecteur v1, struct vecteur v2) {
+    double produit_scalaire = v1.i * v2.i + v1.j * v2.j;
+    double norme_vecteur1 = norm2(v1);
+    double norme_vecteur2 = norm2(v2);
+    double cos_angle = produit_scalaire / (norme_vecteur1 * norme_vecteur2);
+    
+    // Utiliser la fonction acos() pour obtenir l'angle en radians
+    double angle_radians = acos(cos_angle);
+    
+    return angle_radians;
+}
+
 //Fonction qui détermine la direction privilégiée d_i
 
-struct vecteur dir_priv_tau(struct poisson p, struct poisson* zor, unsigned int nr, struct poisson* zoo, unsigned int no, struct poisson* zoa, unsigned int na){
+struct vecteur dir_priv_tau(struct poisson p, struct poisson* zor, int nr, struct poisson* zoo, int no, struct poisson* zoa, int na){
     struct vecteur d_i;
     struct vecteur d_r = {0, 0};
     struct vecteur d_o = {0, 0};
@@ -107,21 +119,11 @@ struct vecteur dir_priv_tau(struct poisson p, struct poisson* zor, unsigned int 
     return d_i;
 }
 
-double angle_entre_vecteurs(struct vecteur v1, struct vecteur v2) {
-    double produit_scalaire = v1.i * v2.i + v1.j * v2.j;
-    double norme_vecteur1 = norm2(v1);
-    double norme_vecteur2 = norm2(v2);
-    double cos_angle = produit_scalaire / (norme_vecteur1 * norme_vecteur2);
-    
-    // Utiliser la fonction acos() pour obtenir l'angle en radians
-    double angle_radians = acos(cos_angle);
-    
-    return angle_radians;
-}
+
 
 //Simulation du mouvement des poissons
 
-void simulation(struct poisson* poissons,double tau, double theta)
+void simulation(struct poisson* poissons,double tau,double alpha,double s)
 {     
     //Parcourons l'ensemble des poissons
     for (int i = 0; i<NB_POISSONS;i++) 
@@ -132,9 +134,9 @@ void simulation(struct poisson* poissons,double tau, double theta)
         /////// DETERMINONS LES TABLEAUX VOISINS POUR LE POISSON I ////////////
         
         //Initialisation des tableaux des voisins pour chaque zone 
-        struct poisson* zor = malloc (NB_POISSONS*sizeof(NB_POISSONS));
-        struct poisson* zoa = malloc (NB_POISSONS*sizeof(NB_POISSONS));
-        struct poisson* zoo = malloc (NB_POISSONS*sizeof(NB_POISSONS));
+        struct poisson zor[NB_POISSONS];
+        struct poisson zoa[NB_POISSONS];
+        struct poisson zoo[NB_POISSONS];
 
         int nr; //Compteurs du nb de poissons dans chaque zone
         int no;
@@ -143,10 +145,12 @@ void simulation(struct poisson* poissons,double tau, double theta)
         //Remplissons ces tableaux pour le poisson i 
         for(int j = 0; j<NB_POISSONS; j++)  //on parcourt les voisins du poisson i pour leur assigner chacun une zone 
         {
-            if (j!=i)
+            struct vecteur v2 = {poissons[j].x,poissons[j].y}; 
+            struct vecteur v1_oppose = {-v1.i,-v1.j};
+            
+            if (j!=i && angle_entre_vecteurs(poissons[i].v,somme_vecteurs(v2,v1_oppose))<alpha/2)
             {
-                struct vecteur v2 = {poissons[j].x,poissons[j].y};
-                unsigned int dist = distance(v1,v2);
+                int dist = distance(v1,v2);
 
                 if (dist <=1) //Si le poisson est dans la zone de répulsion
                 {
@@ -166,12 +170,23 @@ void simulation(struct poisson* poissons,double tau, double theta)
                     na++;
                 }
             }
-            free(zoo);
-            free(zoa);
-            free(zor);
+            
         }
-        struct vecteur d_i = dir_priv_tau(poissons[i], zor, nr, zoo, no, zoa, na);
-        double angle = angle_entre_vecteurs(d_i, poissons[i].v);
+
+        //Calculons di+tau
+        struct vecteur d_i = dir_priv_tau(poissons[i], zor, nr, zoo, no, zoa, na); 
+        
+        //Calculons les nouvelles positions du poisson i
+        double nv_x = poissons[i].x + d_i.i*s*tau/norm2(d_i);
+        double nv_y = poissons[i].y + d_i.j*s*tau/norm2(d_i);
+        
+
+        //double angle = angle_entre_vecteurs(d_i, poissons[i].v);
+
+        //Mettons à jour le tableau de poissons
+        struct poisson nv_pi = {nv_x,nv_y,d_i};
+        poissons[i]= nv_pi;
+
     }
 }
 
@@ -257,7 +272,7 @@ int main()
         }
 
         //Simulation du mouvement des poissons
-        simulation(poissons,)
+        simulation(poissons,0.1,250,1);
 
         // Render the updated positions
         render ( renderer , &texture ) ;
