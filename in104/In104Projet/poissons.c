@@ -6,9 +6,8 @@
 
 #define IMAGE_WIDTH 1200
 #define IMAGE_HEIGHT 800
-#define NB_POISSONS 100
 #define PI 3.14159265358979323846
-
+#define NB_POISSONS 100
 struct vecteur{
     double i;
     double j;
@@ -23,6 +22,10 @@ struct poisson{
 double norm2(struct vecteur v){
     double n = sqrt(v.i*v.i + v.j*v.j);
     return n;
+}
+
+double distance(struct vecteur v1, struct vecteur v2){
+    return sqrt((v2.i - v1.i) * (v2.i - v1.i) + (v2.j - v1.j) * (v2.j - v1.j));
 }
 
 struct vecteur r(struct poisson pi, struct poisson pj){
@@ -108,23 +111,54 @@ struct vecteur dir_priv_tau(struct poisson p, struct poisson* zor, unsigned int 
 
 //Simulation du mouvement des poissons
 
-void simulation(struct poisson* poissons,int nb_poissons,double tau, double theta)
-{ 
-    //Initialisation des tableaux des voisins pour chaque zone 
-    struct poisson* zor;
-    struct poisson* zoa;
-    struct poisson* zoo;
-
-    for (int i = 0; i<nb_poissons;i++) //on parcourt l'ensemble des poissons
+void simulation(struct poisson* poissons,double tau, double theta)
+{     
+    //Parcourons l'ensemble des poissons
+    for (int i = 0; i<NB_POISSONS;i++) 
     {
+        struct vecteur v1 = {poissons[i].x,poissons[i].y}; //vecteur position du poisson i 
+
+
+        /////// DETERMINONS LES TABLEAUX VOISINS POUR LE POISSON I ////////////
+        
+        //Initialisation des tableaux des voisins pour chaque zone 
+        struct poisson* zor = malloc (NB_POISSONS*sizeof(NB_POISSONS));
+        struct poisson* zoa = malloc (NB_POISSONS*sizeof(NB_POISSONS));
+        struct poisson* zoo = malloc (NB_POISSONS*sizeof(NB_POISSONS));
+
+        int nr; //Compteurs du nb de poissons dans chaque zone
+        int no;
+        int na;
+
         //Remplissons ces tableaux pour le poisson i 
-        for(int j = 0; i<nb_poissons; i++){
-            
-        }
-        int nb_voisins =0;
-        for (int j = 0; j<nb_poissons;j++)
+        for(int j = 0; j<NB_POISSONS; j++)  //on parcourt les voisins du poisson i pour leur assigner chacun une zone 
         {
-            if (int i)
+            if (j!=i)
+            {
+                struct vecteur v2 = {poissons[j].x,poissons[j].y};
+                unsigned int dist = distance(v1,v2);
+
+                if (dist <=1) //Si le poisson est dans la zone de répulsion
+                {
+                    zor[nr]=poissons[j];
+                    nr++;
+                }
+
+                if (1<dist && dist<=16)
+                {
+                    zoo[no]=poissons[j];
+                    no++;
+                }
+
+                if (dist>16 && dist<=31)
+                {
+                    zoa[na]=poissons[j];
+                    na++;
+                }
+            }
+            free(zoo);
+            free(zoa);
+            free(zor);
         }
     }
 }
