@@ -107,7 +107,17 @@ struct vecteur dir_priv_tau(struct poisson p, struct poisson* zor, unsigned int 
     return d_i;
 }
 
-
+double angle_entre_vecteurs(struct vecteur v1, struct vecteur v2) {
+    double produit_scalaire = v1.i * v2.i + v1.j * v2.j;
+    double norme_vecteur1 = norm2(v1);
+    double norme_vecteur2 = norm2(v2);
+    double cos_angle = produit_scalaire / (norme_vecteur1 * norme_vecteur2);
+    
+    // Utiliser la fonction acos() pour obtenir l'angle en radians
+    double angle_radians = acos(cos_angle);
+    
+    return angle_radians;
+}
 
 //Simulation du mouvement des poissons
 
@@ -160,6 +170,8 @@ void simulation(struct poisson* poissons,double tau, double theta)
             free(zoa);
             free(zor);
         }
+        struct vecteur d_i = dir_priv_tau(poissons[i], zor, nr, zoo, no, zoa, na);
+        double angle = angle_entre_vecteurs(d_i, poissons[i].v);
     }
 }
 
