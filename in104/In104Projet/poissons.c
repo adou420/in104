@@ -125,6 +125,8 @@ struct vecteur dir_priv_tau(struct poisson p, struct poisson* zor, int nr, struc
 
 void simulation(struct poisson* poissons,double tau,double alpha,double s)
 {     
+    
+    
     //Parcourons l'ensemble des poissons
     for (int i = 0; i<NB_POISSONS;i++) 
     {
@@ -134,13 +136,13 @@ void simulation(struct poisson* poissons,double tau,double alpha,double s)
         /////// DETERMINONS LES TABLEAUX VOISINS POUR LE POISSON I ////////////
         
         //Initialisation des tableaux des voisins pour chaque zone 
-        struct poisson zor[NB_POISSONS];
-        struct poisson zoa[NB_POISSONS];
-        struct poisson zoo[NB_POISSONS];
+        struct poisson* zor = malloc (NB_POISSONS*sizeof(struct poisson));
+        struct poisson* zoa = malloc (NB_POISSONS*sizeof(struct poisson));
+        struct poisson* zoo = malloc (NB_POISSONS*sizeof(struct poisson));
 
-        int nr; //Compteurs du nb de poissons dans chaque zone
-        int no;
-        int na;
+        int nr=0; //Compteurs du nb de poissons dans chaque zone
+        int no=0;
+        int na=0;
 
         //Remplissons ces tableaux pour le poisson i 
         for(int j = 0; j<NB_POISSONS; j++)  //on parcourt les voisins du poisson i pour leur assigner chacun une zone 
@@ -170,6 +172,7 @@ void simulation(struct poisson* poissons,double tau,double alpha,double s)
                     na++;
                 }
             }
+
             
         }
 
@@ -187,7 +190,11 @@ void simulation(struct poisson* poissons,double tau,double alpha,double s)
         struct poisson nv_pi = {nv_x,nv_y,d_i};
         poissons[i]= nv_pi;
 
+        free (zoa);
+        free (zor);
+        free (zoo);
     }
+    
 }
 
 // Window
@@ -272,7 +279,7 @@ int main()
         }
 
         //Simulation du mouvement des poissons
-        simulation(poissons,0.1,250,1);
+        simulation(poissons,0.1,4.36,1);
 
         // Render the updated positions
         render ( renderer , &texture ) ;
