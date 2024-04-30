@@ -198,15 +198,15 @@ void simulation(struct poisson* poissons,double tau,double alpha,double s)
 }
 
 // Window
-void render (SDL_Renderer *renderer , SDL_Texture **texture ) {
+void render (SDL_Renderer *renderer , SDL_Texture **texture, struct poisson p) {
     SDL_SetRenderDrawColor ( renderer , 255 , 255 , 255 , 255) ;
     SDL_RenderClear ( renderer ) ;
 
     SDL_SetRenderDrawColor ( renderer , 0 , 0 , 255 , 255) ;
-    SDL_Rect rect = { 400 , 400 , 10 , 10 } ;
+    SDL_Rect rect = { (int)p.x , (int)p.y , 10 , 10 } ;
     SDL_RenderFillRect ( renderer , &rect ) ;
     SDL_RenderCopy ( renderer , *texture , NULL, &rect ) ;
-    // SDL RenderCopyEx ( renderer , ∗texture , NULL, &destRect , angle , NULL, SDL_FLIP_NONE);
+    // SDL_RenderCopyEx ( renderer , ∗texture , NULL, &destRect , angle , NULL, SDL_FLIP_NONE);
 
     SDL_RenderPresent ( renderer ) ;
 }
@@ -257,7 +257,7 @@ int main()
     
 
     //Création des poissons 
-    struct poisson poissons[NB_POISSONS];  //tableau contenant tous les poissons
+    struct poisson* poissons= malloc(NB_POISSONS*sizeof(struct poisson));  //tableau contenant tous les poissons
     for (int i =0;i<NB_POISSONS; i++)  //On parcourt tous les poissons
     {
         //on donne à chaque poisson une position aléatoire dans la fenetre
@@ -278,14 +278,17 @@ int main()
             }
         }
 
-        //Simulation du mouvement des poissons
+        //Simulation du mouvement des poissons : on met a jour le tableau des poissons
         simulation(poissons,0.1,4.36,1);
 
         // Render the updated positions
-        render ( renderer , &texture ) ;
+        for (int i =0; i<NB_POISSONS;i++)
+        {
+            render ( renderer , &texture,poissons[i] ) ;
+        }
 
         // Delay to control the frame rate
-        // SDL Delay ( 1 ) ;
+        SDL_Delay ( 1 ) ;
     }
 
     
@@ -294,5 +297,6 @@ int main()
     SDL_DestroyWindow(window) ;
     SDL_Quit ( ) ;
 
+    free (poissons);
     return 0 ;
 }
