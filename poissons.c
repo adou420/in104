@@ -247,7 +247,7 @@ void loadTexture(SDL_Renderer *renderer, SDL_Texture **texture) {
 }
 
 // Window
-void render(SDL_Renderer *renderer, SDL_Texture **texture, struct poisson* p) {
+void render(SDL_Renderer *renderer, SDL_Texture **texture, struct poisson* p, double angle) {
     if (p->v.j < 0 && p->y + FISH_HEIGHT < 0)
     {
         p->y = WINDOW_HEIGHT + FISH_HEIGHT;
@@ -270,8 +270,14 @@ void render(SDL_Renderer *renderer, SDL_Texture **texture, struct poisson* p) {
 
     
     SDL_Rect rect = {(int)p->x, (int)p->y, FISH_WIDTH, FISH_HEIGHT };
-    SDL_RenderCopy(renderer, *texture, NULL, &rect);
-    // SDL_RenderCopyEx(renderer, ∗texture, NULL, &destRect, angle, NULL, SDL_FLIP_NONE);
+    //SDL_RenderCopy(renderer, *texture, NULL, &rect);
+
+    // //Rotation
+
+    //On définit le point de pivotement au centre de l'image
+    SDL_Point pivot = {FISH_WIDTH / 2, FISH_HEIGHT / 2};
+
+    SDL_RenderCopyEx(renderer, *texture, NULL, &rect, angle, &pivot, SDL_FLIP_NONE); //rotation de l'image ATTENTION, l'angle doit être en degrés
 }
 
 int main()
@@ -322,6 +328,10 @@ int main()
         poissons[i].v.j = 12.0;
     }
 
+    //On crée un tableau pour garder en mémoire les anciennes positions + directions des poissons
+    struct poisson * ancien_poissons = malloc(NB_POISSONS*sizeof(struct poisson));
+
+
     SDL_Event event;
     bool quit = false;
     while (!quit) {
@@ -330,6 +340,10 @@ int main()
                 quit = true;
             }
         }
+
+        // On garde en mémoire l'ancien tableau de poissons
+        memcpy(ancien_poissons,poissons,NB_POISSONS*sizeof(struct poisson));
+
 
         //Simulation du mouvement des poissons : on met a jour le tableau des poissons
         simulation(poissons, 0.1, 4.36, s,theta);
@@ -341,7 +355,7 @@ int main()
         // SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255);
 
         for (int i = 0; i < NB_POISSONS; i++) {
-            render(renderer, &texture, poissons + i);
+            render(renderer, &texture, poissons + i,angle_entre_vecteurs(ancien_poissons[i].v,poissons[i].v)*180/PI);
         }
 
         SDL_RenderPresent(renderer);
@@ -357,5 +371,6 @@ int main()
     SDL_Quit();
 
     free(poissons);
+    free(ancien_poissons);
     return 0;
 }
