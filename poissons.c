@@ -248,18 +248,14 @@ void render(SDL_Renderer *renderer, SDL_Texture **texture, struct poisson* p) {
 
     
     SDL_Rect rect = {(int)p->x, (int)p->y, FISH_WIDTH, FISH_HEIGHT };
-    SDL_RenderFillRect(renderer, &rect);
     SDL_RenderCopy(renderer, *texture, NULL, &rect);
     // SDL_RenderCopyEx(renderer, ∗texture, NULL, &destRect, angle, NULL, SDL_FLIP_NONE);
 }
 
 int main()
 {
-    // struct vecteur v1 = {2,2};
-    // struct vecteur v2 = {-1,1};
-    // somme_vecteurs(v1,v2);
-
-    // return 0;
+    // definition des constantes
+    int s = 2;
 
 
     if (SDL_Init (SDL_INIT_VIDEO) < 0) {
@@ -314,7 +310,7 @@ int main()
         }
 
         //Simulation du mouvement des poissons : on met a jour le tableau des poissons
-        simulation(poissons, 0.1, 4.36, 10);
+        simulation(poissons, 0.1, 4.36, s);
 
         // Render the updated positions
 
