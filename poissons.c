@@ -130,11 +130,19 @@ struct vecteur dir_priv_tau(struct poisson p, struct poisson* zor, int nr, struc
     }
 }
 
+// On utilise l'algorithme de Box-Muller pour générer un nombre aléatoire gaussien
+double generate_random_noise(double mean, double stddev) {
+   
+    double u1 = ((double) rand() / RAND_MAX);
+    double u2 = ((double) rand() / RAND_MAX);
 
+    double z0 = sqrt(-2.0 * log(u1)) * cos(2.0 * PI * u2);
+    return mean + stddev * z0;
+}
 
 //Simulation du mouvement des poissons
 
-void simulation(struct poisson* poissons, double tau, double alpha, double s)
+void simulation(struct poisson* poissons, double tau, double alpha, double s, int theta)
 {        
     //Parcourons l'ensemble des poissons
     for (int i = 0; i < NB_POISSONS;i++) 
@@ -185,15 +193,29 @@ void simulation(struct poisson* poissons, double tau, double alpha, double s)
             
         }
 
+
         //Calculons di+tau
         struct vecteur d_i = dir_priv_tau(poissons[i], zor, nr, zoo, no, zoa, na); 
         
-        //Calculons les nouvelles positions du poisson i
-        double nv_x = poissons[i].x + d_i.i*s*tau/norm2(d_i);
-        double nv_y = poissons[i].y + d_i.j*s*tau/norm2(d_i);
-        
+        // Ajout de bruit gaussien à la direction préférée
+        double noise_x = generate_random_noise(0.0,0.1);
+        double noise_y = generate_random_noise(0.0,0.1);
+        struct vecteur noisy_direction = {d_i.i + noise_x, d_i.j + noise_y};
 
-        //double angle = angle_entre_vecteurs(d_i, poissons[i].v);
+        //Rotation
+        double angle = atan2(noisy_direction.i, noisy_direction.j);
+        angle += generate_random_noise(0.0,0.1) * theta;
+        double new_x = cos(angle);
+        double new_y = sin(angle);
+
+        // Mise à jour du vecteur direction
+        poissons[i].v.i = s*new_x;
+        poissons[i].v.j = s*new_y;
+
+        //Calculons les nouvelles positions du poisson i
+        double nv_x = poissons[i].x + poissons[i].v.i*tau;
+        double nv_y = poissons[i].y + poissons[i].v.j*tau;
+        
 
         //Mettons à jour le tableau de poissons
         struct poisson nv_pi = {nv_x, nv_y, d_i};
@@ -256,7 +278,7 @@ int main()
 {
     // definition des constantes
     int s = 2;
-
+    int theta = 2;
 
     if (SDL_Init (SDL_INIT_VIDEO) < 0) {
         fprintf(stderr, "SDL initialization failed : %s \n", SDL_GetError());
@@ -310,7 +332,7 @@ int main()
         }
 
         //Simulation du mouvement des poissons : on met a jour le tableau des poissons
-        simulation(poissons, 0.1, 4.36, s);
+        simulation(poissons, 0.1, 4.36, s,theta);
 
         // Render the updated positions
 
