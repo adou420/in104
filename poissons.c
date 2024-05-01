@@ -29,8 +29,7 @@ struct poisson{
 
 //fonction qui renvoie la norme d'un vecteur 
 double norm2(struct vecteur v){
-    double n = sqrt(v.i*v.i + v.j*v.j);
-    return n;
+    return sqrt(v.i*v.i + v.j*v.j);
 }
 
 //fonction qui renvoie la distance entre deux positions
@@ -129,8 +128,6 @@ struct vecteur dir_priv_tau(struct poisson p, struct poisson* zor, int nr, struc
             return d_i;
         }
     }
-
-
 }
 
 
@@ -229,7 +226,28 @@ void loadTexture(SDL_Renderer *renderer, SDL_Texture **texture) {
 
 // Window
 void render(SDL_Renderer *renderer, SDL_Texture **texture, struct poisson* p) {
-    SDL_Rect rect = { (int)p->x, (int)p->y, FISH_WIDTH, FISH_HEIGHT };
+    if (p->v.j < 0 && p->y + FISH_HEIGHT < 0)
+    {
+        p->y = WINDOW_HEIGHT + FISH_HEIGHT;
+    }
+
+    if (p->v.j > 0 && p->y > WINDOW_HEIGHT)
+    {
+        p->y = -FISH_HEIGHT;
+    }
+
+    if (p->v.i < 0 && p->x + FISH_WIDTH < 0)
+    {
+        p->x = WINDOW_WIDTH + FISH_WIDTH;
+    }
+
+    if (p->v.i > 0 && p->x > WINDOW_WIDTH)
+    {
+        p->x = -FISH_WIDTH;
+    }
+
+    
+    SDL_Rect rect = {(int)p->x, (int)p->y, FISH_WIDTH, FISH_HEIGHT };
     SDL_RenderFillRect(renderer, &rect);
     SDL_RenderCopy(renderer, *texture, NULL, &rect);
     // SDL_RenderCopyEx(renderer, ∗texture, NULL, &destRect, angle, NULL, SDL_FLIP_NONE);
@@ -241,7 +259,7 @@ int main()
     // struct vecteur v2 = {-1,1};
     // somme_vecteurs(v1,v2);
 
-    //return 0;
+    // return 0;
 
 
     if (SDL_Init (SDL_INIT_VIDEO) < 0) {
@@ -282,8 +300,8 @@ int main()
         poissons[i].y = (double)(rand() % WINDOW_HEIGHT);
 
         //On donne à chaque poisson un vecteur direction initial nul
-        poissons[i].v.i = 0.0;
-        poissons[i].v.j = 0.0;
+        poissons[i].v.i = 10.0;
+        poissons[i].v.j = 12.0;
     }
 
     SDL_Event event;
@@ -296,7 +314,7 @@ int main()
         }
 
         //Simulation du mouvement des poissons : on met a jour le tableau des poissons
-        simulation(poissons, 0.1, 4.36, 1);
+        simulation(poissons, 0.1, 4.36, 10);
 
         // Render the updated positions
 
