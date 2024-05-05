@@ -212,14 +212,28 @@ void simulation(struct poisson* poissons, double tau, double alpha, double s, in
         poissons[i].v.i = s*new_x;
         poissons[i].v.j = s*new_y;
 
+        poissons[i].v = d_i;
+
         //Calculons les nouvelles positions du poisson i
         double nv_x = poissons[i].x + poissons[i].v.i*tau;
         double nv_y = poissons[i].y + poissons[i].v.j*tau;
         
 
-        //Mettons à jour le tableau de poissons
-        struct poisson nv_pi = {nv_x, nv_y, d_i};
-        poissons[i]= nv_pi;
+        // //Mettons à jour le tableau de poissons
+        // struct poisson nv_pi = {nv_x, nv_y, d_i};
+        // poissons[i]= nv_pi;
+
+        // Vérifions si le poisson atteint le bord de la fenêtre et inversons sa direction si nécessaire
+        if (nv_x < 0 || nv_x + FISH_WIDTH > WINDOW_WIDTH) {
+            poissons[i].v.i = -poissons[i].v.i;
+        }
+        if (nv_y < 0 || nv_y + FISH_HEIGHT > WINDOW_HEIGHT) {
+            poissons[i].v.j = -poissons[i].v.j;
+        }
+
+        // Mettons à jour les positions des poissons
+        poissons[i].x = nv_x;
+        poissons[i].y = nv_y;
 
         free (zoa);
         free (zor);
@@ -247,37 +261,34 @@ void loadTexture(SDL_Renderer *renderer, SDL_Texture **texture) {
 }
 
 // Window
-void render(SDL_Renderer *renderer, SDL_Texture **texture, struct poisson* p, double angle) {
-    if (p->v.j < 0 && p->y + FISH_HEIGHT < 0)
-    {
-        p->y = WINDOW_HEIGHT + FISH_HEIGHT;
-    }
+void render(SDL_Renderer *renderer, SDL_Texture **texture, struct poisson* p) {
+    // if (p->v.j < 0 && p->y + FISH_HEIGHT < 0)
+    // {
+    //     p->y = WINDOW_HEIGHT + FISH_HEIGHT;
+    // }
 
-    if (p->v.j > 0 && p->y > WINDOW_HEIGHT)
-    {
-        p->y = -FISH_HEIGHT;
-    }
+    // if (p->v.j > 0 && p->y > WINDOW_HEIGHT)
+    // {
+    //     p->y = -FISH_HEIGHT;
+    // }
 
-    if (p->v.i < 0 && p->x + FISH_WIDTH < 0)
-    {
-        p->x = WINDOW_WIDTH + FISH_WIDTH;
-    }
+    // if (p->v.i < 0 && p->x + FISH_WIDTH < 0)
+    // {
+    //     p->x = WINDOW_WIDTH + FISH_WIDTH;
+    // }
 
-    if (p->v.i > 0 && p->x > WINDOW_WIDTH)
-    {
-        p->x = -FISH_WIDTH;
-    }
+    // if (p->v.i > 0 && p->x > WINDOW_WIDTH)
+    // {
+    //     p->x = -FISH_WIDTH;
+    // }
 
     
     SDL_Rect rect = {(int)p->x, (int)p->y, FISH_WIDTH, FISH_HEIGHT };
-    //SDL_RenderCopy(renderer, *texture, NULL, &rect);
+    SDL_RenderCopy(renderer, *texture, NULL, &rect);
 
-    // //Rotation
-
-    //On définit le point de pivotement au centre de l'image
-    SDL_Point pivot = {FISH_WIDTH / 2, FISH_HEIGHT / 2};
-
-    SDL_RenderCopyEx(renderer, *texture, NULL, &rect, angle, &pivot, SDL_FLIP_NONE); //rotation de l'image ATTENTION, l'angle doit être en degrés
+    // Rotation
+    //struct vecteur vecteur_nul = {1,0};
+    //SDL_RenderCopyEx(renderer, *texture, NULL, &rect, angle_entre_vecteurs(p->v,vecteur_nul), NULL, SDL_FLIP_HORIZONTAL); //rotation de l'image ATTENTION, l'angle doit être en degrés
 }
 
 int main()
@@ -355,7 +366,7 @@ int main()
         // SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255);
 
         for (int i = 0; i < NB_POISSONS; i++) {
-            render(renderer, &texture, poissons + i,angle_entre_vecteurs(ancien_poissons[i].v,poissons[i].v)*180/PI);
+            render(renderer, &texture, poissons + i);
         }
 
         SDL_RenderPresent(renderer);
