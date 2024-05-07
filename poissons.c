@@ -14,7 +14,9 @@
 
 
 #define PI 3.14159265358979323846
-#define NB_POISSONS 100
+#define NB_POISSONS 105
+#define S 10.0
+#define THETA 2
 
 struct vecteur{
     double i;
@@ -57,15 +59,28 @@ struct vecteur somme_vecteurs(struct vecteur vi, struct vecteur vj)
 }
 
 double angle_entre_vecteurs(struct vecteur v1, struct vecteur v2) {
-    double produit_scalaire = v1.i * v2.i + v1.j * v2.j;
-    double norme_vecteur1 = norm2(v1);
-    double norme_vecteur2 = norm2(v2);
-    double cos_angle = produit_scalaire / (norme_vecteur1 * norme_vecteur2);
-    
-    // Utiliser la fonction acos() pour obtenir l'angle en radians
-    double angle_radians = acos(cos_angle);
-    
-    return angle_radians;
+    // double produit_scalaire = v1.i * v2.i + v1.j * v2.j;
+    // double norme_vecteur1 = norm2(v1);
+    // double norme_vecteur2 = norm2(v2);
+    // double cos_angle = produit_scalaire / (norme_vecteur1 * norme_vecteur2);
+    // // if (cos_angle > 1 || cos_angle < -1) {
+    // //     printf("%lf\n", cos_angle);
+    // // }
+    // // Utiliser la fonction acos() pour obtenir l'angle en radians
+
+    // if (cos_angle > PI)
+    // {
+    //     return 2*PI - acos(cos_angle);
+    // }
+
+    // return acos(cos_angle);
+
+    // double norme_vecteur1_carre = v1.i * v1.i + v1.j * v1.j;
+    // double norme_vecteur2_carre = v2.i * v2.i + v2.j * v2.j;
+
+    // return atan2(sqrt(norme_vecteur2_carre - norme_vecteur1_carre), sqrt(norme_vecteur1_carre)) + PI;
+    return atan2(v2.j * v1.i - v2.i * v1.j, v2.i * v1.i + v2.j * v1.j);
+
 }
 
 //Fonction qui détermine la direction privilégiée d_i du poisson qu'on considère
@@ -142,7 +157,7 @@ double generate_random_noise(double mean, double stddev) {
 
 //Simulation du mouvement des poissons
 
-void simulation(struct poisson* poissons, double tau, double alpha, double s, int theta)
+void simulation(struct poisson* poissons, double tau, double alpha)
 {        
     //Parcourons l'ensemble des poissons
     for (int i = 0; i < NB_POISSONS;i++) 
@@ -204,13 +219,13 @@ void simulation(struct poisson* poissons, double tau, double alpha, double s, in
 
         //Rotation
         double angle = atan2(noisy_direction.i, noisy_direction.j);
-        angle += generate_random_noise(0.0,0.1) * theta;
+        angle += generate_random_noise(0.0,0.1) * THETA;
         double new_x = cos(angle);
         double new_y = sin(angle);
 
         // Mise à jour du vecteur direction
-        poissons[i].v.i = s*new_x;
-        poissons[i].v.j = s*new_y;
+        poissons[i].v.i = S * new_x;
+        poissons[i].v.j = S * new_y;
 
         poissons[i].v = d_i;
 
@@ -225,10 +240,10 @@ void simulation(struct poisson* poissons, double tau, double alpha, double s, in
 
         // Vérifions si le poisson atteint le bord de la fenêtre et inversons sa direction si nécessaire
         if (nv_x < 0 || nv_x + FISH_WIDTH > WINDOW_WIDTH) {
-            poissons[i].v.i = -poissons[i].v.i;
+            poissons[i].v.i *= -1;
         }
         if (nv_y < 0 || nv_y + FISH_HEIGHT > WINDOW_HEIGHT) {
-            poissons[i].v.j = -poissons[i].v.j;
+            poissons[i].v.j *= -1;
         }
 
         // Mettons à jour les positions des poissons
@@ -284,19 +299,29 @@ void render(SDL_Renderer *renderer, SDL_Texture **texture, struct poisson* p) {
 
     
     SDL_Rect rect = {(int)p->x, (int)p->y, FISH_WIDTH, FISH_HEIGHT };
-    SDL_RenderCopy(renderer, *texture, NULL, &rect);
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+    // SDL_RenderCopy(renderer, *texture, NULL, &rect);
 
     // Rotation
-    //struct vecteur vecteur_nul = {1,0};
-    //SDL_RenderCopyEx(renderer, *texture, NULL, &rect, angle_entre_vecteurs(p->v,vecteur_nul), NULL, SDL_FLIP_HORIZONTAL); //rotation de l'image ATTENTION, l'angle doit être en degrés
+    struct vecteur vecteur_horizontal = {1,0};
+    double alpha = angle_entre_vecteurs(p->v,vecteur_horizontal);
+    if (alpha < 0) 
+    {
+        alpha *= -1;
+    } 
+    else
+    {
+        alpha = 2*PI - alpha;
+    }
+    SDL_RenderCopyEx(renderer, *texture, NULL, &rect, (180/PI)*alpha, NULL, SDL_FLIP_NONE); //rotation de l'image ATTENTION, l'angle doit être en degrés
+
+    int const x0 = (int)p->x + FISH_WIDTH / 2;
+    int const y0 = (int)p->y + FISH_HEIGHT / 2;
+    SDL_RenderDrawLine(renderer, x0, y0, x0 + p->v.i * 5, y0 + p->v.j * 5);
 }
 
 int main()
 {
-    // definition des constantes
-    int s = 2;
-    int theta = 2;
-
     if (SDL_Init (SDL_INIT_VIDEO) < 0) {
         fprintf(stderr, "SDL initialization failed : %s \n", SDL_GetError());
         return 1;
@@ -357,7 +382,7 @@ int main()
 
 
         //Simulation du mouvement des poissons : on met a jour le tableau des poissons
-        simulation(poissons, 0.1, 4.36, s,theta);
+        simulation(poissons, 0.1, 4.36);
 
         // Render the updated positions
 
