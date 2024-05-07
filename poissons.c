@@ -155,6 +155,41 @@ double generate_random_noise(double mean, double stddev) {
     return mean + stddev * z0;
 }
 
+// Faisons en sorte que les poissons ne se superposent pas
+
+void resolve_collision(struct poisson* p1, struct poisson* p2) {
+    double distance = sqrt((p1->x - p2->x) * (p1->x - p2->x) + (p1->y - p2->y) * (p1->y - p2->y));  // redondant avec la fonction distance, il va falloir arranger ça
+    double min_distance = FISH_WIDTH;
+
+    if (distance < min_distance) {
+        // Calculons le vecteur de séparation
+        double dx = p2->x - p1->x;
+        double dy = p2->y - p1->y;
+        double angle = atan2(dy, dx);
+        double separation = min_distance - distance;
+
+        // Déplacer les poissons pour les séparer
+        p1->x -= cos(angle) * separation / 2;
+        p1->y -= sin(angle) * separation / 2;
+        p2->x += cos(angle) * separation / 2;
+        p2->y += sin(angle) * separation / 2;
+    }
+    return;
+}
+
+void check_collisions(struct poisson* poissons) {
+    for (int i = 0; i < NB_POISSONS - 1; i++) {
+        for (int j = i + 1; j < NB_POISSONS; j++) {
+            resolve_collision(&poissons[i], &poissons[j]);
+        }
+    }
+    return;
+}
+
+
+
+
+
 //Simulation du mouvement des poissons
 
 void simulation(struct poisson* poissons, double tau, double alpha)
@@ -254,8 +289,12 @@ void simulation(struct poisson* poissons, double tau, double alpha)
         free (zor);
         free (zoo);
     }
+
+    // Faisons en sorte que les poissons ne se superposent pas
+    check_collisions(poissons);
     
 }
+
 
 void loadTexture(SDL_Renderer *renderer, SDL_Texture **texture) {
     SDL_Surface *surface = IMG_Load("fish.png");
@@ -303,7 +342,7 @@ void render(SDL_Renderer *renderer, SDL_Texture **texture, struct poisson* p) {
     // SDL_RenderCopy(renderer, *texture, NULL, &rect);
 
     // Rotation
-    struct vecteur vecteur_horizontal = {1,0};
+    struct vecteur const vecteur_horizontal = {1,0};
     double alpha = angle_entre_vecteurs(p->v,vecteur_horizontal);
     if (alpha < 0) 
     {
