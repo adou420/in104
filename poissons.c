@@ -14,9 +14,12 @@
 
 
 #define PI 3.14159265358979323846
-#define NB_POISSONS 105
-#define S 10.0
+#define NB_POISSONS 100
+#define S 5.0
 #define THETA 2
+
+#define V_I_INIT 5;
+#define V_J_INIT 6;
 
 struct vecteur{
     double i;
@@ -59,27 +62,7 @@ struct vecteur somme_vecteurs(struct vecteur vi, struct vecteur vj)
 }
 
 double angle_entre_vecteurs(struct vecteur v1, struct vecteur v2) {
-    // double produit_scalaire = v1.i * v2.i + v1.j * v2.j;
-    // double norme_vecteur1 = norm2(v1);
-    // double norme_vecteur2 = norm2(v2);
-    // double cos_angle = produit_scalaire / (norme_vecteur1 * norme_vecteur2);
-    // // if (cos_angle > 1 || cos_angle < -1) {
-    // //     printf("%lf\n", cos_angle);
-    // // }
-    // // Utiliser la fonction acos() pour obtenir l'angle en radians
-
-    // if (cos_angle > PI)
-    // {
-    //     return 2*PI - acos(cos_angle);
-    // }
-
-    // return acos(cos_angle);
-
-    // double norme_vecteur1_carre = v1.i * v1.i + v1.j * v1.j;
-    // double norme_vecteur2_carre = v2.i * v2.i + v2.j * v2.j;
-
-    // return atan2(sqrt(norme_vecteur2_carre - norme_vecteur1_carre), sqrt(norme_vecteur1_carre)) + PI;
-    return atan2(v2.j * v1.i - v2.i * v1.j, v2.i * v1.i + v2.j * v1.j);
+    return atan2(v2.j * v1.i - v2.i * v1.j, v2.i * v1.i + v2.j * v1.j);  //renvoie un angle entre -pi et pi
 
 }
 
@@ -101,8 +84,8 @@ struct vecteur dir_priv_tau(struct poisson p, struct poisson* zor, int nr, struc
             d_r = somme_vecteurs(d_r, r(p, zor[j]));
         }
 
-        d_r.i *= -1;
-        d_r.j *= -1;
+        d_r.i *= -1 ;
+        d_r.j *= -1 ;
 
         return d_r;
     }
@@ -262,11 +245,11 @@ void simulation(struct poisson* poissons, double tau, double alpha)
         poissons[i].v.i = S * new_x;
         poissons[i].v.j = S * new_y;
 
-        poissons[i].v = d_i;
+        poissons[i].v = d_i;    
 
         //Calculons les nouvelles positions du poisson i
-        double nv_x = poissons[i].x + poissons[i].v.i*tau;
-        double nv_y = poissons[i].y + poissons[i].v.j*tau;
+        double nv_x = poissons[i].x + poissons[i].v.i*tau*S;
+        double nv_y = poissons[i].y + poissons[i].v.j*tau*S;
         
 
         // //Mettons à jour le tableau de poissons
@@ -291,7 +274,7 @@ void simulation(struct poisson* poissons, double tau, double alpha)
     }
 
     // Faisons en sorte que les poissons ne se superposent pas
-    check_collisions(poissons);
+    //check_collisions(poissons);
     
 }
 
@@ -398,9 +381,9 @@ int main()
         poissons[i].x = (double)(rand() % WINDOW_WIDTH);
         poissons[i].y = (double)(rand() % WINDOW_HEIGHT);
 
-        //On donne à chaque poisson un vecteur direction initial nul
-        poissons[i].v.i = 10.0;
-        poissons[i].v.j = 12.0;
+        //On donne à chaque poisson un vecteur direction initial 
+        poissons[i].v.i = V_I_INIT;
+        poissons[i].v.j = V_J_INIT;
     }
 
     //On crée un tableau pour garder en mémoire les anciennes positions + directions des poissons
