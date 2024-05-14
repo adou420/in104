@@ -16,7 +16,7 @@
 #define PI 3.14159265358979323846
 #define NB_POISSONS 100
 #define S 5.0
-#define THETA 2
+#define THETA 0.5
 
 #define V_I_INIT 5;
 #define V_J_INIT 6;
@@ -228,33 +228,19 @@ void simulation(struct poisson* poissons, double tau, double alpha)
 
 
         //Calculons di+tau
-        struct vecteur d_i = dir_priv_tau(poissons[i], zor, nr, zoo, no, zoa, na); 
+        struct vecteur d_i = dir_priv_tau(poissons[i], zor, nr, zoo, no, zoa, na);
         
         // Ajout de bruit gaussien à la direction préférée
         double noise_x = generate_random_noise(0.0,0.1);
         double noise_y = generate_random_noise(0.0,0.1);
         struct vecteur noisy_direction = {d_i.i + noise_x, d_i.j + noise_y};
 
-        //Rotation
-        double angle = atan2(noisy_direction.i, noisy_direction.j);
-        angle += generate_random_noise(0.0,0.1) * THETA;
-        double new_x = cos(angle);
-        double new_y = sin(angle);
-
-        // Mise à jour du vecteur direction
-        poissons[i].v.i = S * new_x;
-        poissons[i].v.j = S * new_y;
-
-        poissons[i].v = d_i;    
+        poissons[i].v = noisy_direction;    
 
         //Calculons les nouvelles positions du poisson i
         double nv_x = poissons[i].x + poissons[i].v.i*tau*S;
         double nv_y = poissons[i].y + poissons[i].v.j*tau*S;
         
-
-        // //Mettons à jour le tableau de poissons
-        // struct poisson nv_pi = {nv_x, nv_y, d_i};
-        // poissons[i]= nv_pi;
 
         // Vérifions si le poisson atteint le bord de la fenêtre et inversons sa direction si nécessaire
         if (nv_x < 0 || nv_x + FISH_WIDTH > WINDOW_WIDTH) {
