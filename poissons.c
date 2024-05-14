@@ -15,11 +15,11 @@
 
 #define PI 3.14159265358979323846
 #define NB_POISSONS 100
-#define S 5.0
+#define S 10.0
 #define THETA 0.5
 
-#define V_I_INIT 5;
-#define V_J_INIT 6;
+#define V_I_INIT sqrt(2)/2;
+#define V_J_INIT sqrt(2)/2;
 
 struct vecteur{
     double i;
@@ -45,10 +45,6 @@ double distance(struct vecteur v1, struct vecteur v2){
 //fonction qui renvoie le vecteur unitaire liant deux poissons
 struct vecteur r(struct poisson pi, struct poisson pj){
     struct vecteur rij = {pj.x-pi.x, pj.y-pi.y};
-    struct vecteur *r = &rij;
-    double n = norm2(rij);
-    r->i = r->i/n;
-    r->j = r->j/n;
     return rij;
 }
 
@@ -84,8 +80,8 @@ struct vecteur dir_priv_tau(struct poisson p, struct poisson* zor, int nr, struc
             d_r = somme_vecteurs(d_r, r(p, zor[j]));
         }
 
-        d_r.i *= -1 ;
-        d_r.j *= -1 ;
+        d_r.i *= -1/norm2(d_r) ;
+        d_r.j *= -1/norm2(d_r) ;
 
         return d_r;
     }
@@ -104,11 +100,15 @@ struct vecteur dir_priv_tau(struct poisson p, struct poisson* zor, int nr, struc
 
     if (no>0 && na==0) //des poissons voisins se trouvent uniquement dans la zone d'orientation
     {
+        d_o.i *= 1 / norm2(d_o);
+        d_o.j *= 1 / norm2(d_o);
         return d_o;
     }
 
     else if (na>0 && no ==0) //des poissons voisins se trouvent uniquement dans la zone d'attraction
     {
+        d_a.i *= 1 / norm2(d_a);
+        d_a.j *= 1 / norm2(d_a);
         return d_a;
     }
 
@@ -120,9 +120,12 @@ struct vecteur dir_priv_tau(struct poisson p, struct poisson* zor, int nr, struc
         }
         else 
         {
-            struct vecteur d_i=somme_vecteurs(d_a, d_o);
-            d_i.i=0.5*d_i.i;
-            d_i.j=0.5*d_i.j;
+            struct vecteur d_i = somme_vecteurs(d_a, d_o);
+            d_i.i *= 0.5;
+            d_i.j *= 0.5;
+
+            d_i.i *= 1 / norm2(d_i);
+            d_i.j *= 1 / norm2(d_i);
             return d_i;
         }
     }
@@ -198,9 +201,14 @@ void simulation(struct poisson* poissons, double tau, double alpha)
         for(int j = 0; j < NB_POISSONS; j++)  //on parcourt les voisins du poisson i pour leur assigner chacun une zone 
         {
             struct vecteur v2 = {poissons[j].x, poissons[j].y}; 
-            struct vecteur v1_oppose = {-v1.i, -v1.j};
+
+            //Vérifions si le poisson voisin est dans l'angle mort
+            bool hors_angle_mort = true;
+            double angle = angle_entre_vecteurs(poissons[i].v,r(poissons[i],poissons[j]));
+            if (fabs(angle) > PI - alpha/2)
+            {hors_angle_mort = false;}
             
-            if (j != i && angle_entre_vecteurs(poissons[i].v, somme_vecteurs(v2, v1_oppose)) < alpha/2)
+            if ( j != i && hors_angle_mort)
             {
                 int dist = distance(v1, v2);
 
@@ -228,12 +236,16 @@ void simulation(struct poisson* poissons, double tau, double alpha)
 
 
         //Calculons di+tau
-        struct vecteur d_i = dir_priv_tau(poissons[i], zor, nr, zoo, no, zoa, na);
+        struct vecteur d_i = dir_priv_tau(poissons[i], zor, nr, zoo, no, zoa, na);   //d_i est unitaire
         
         // Ajout de bruit gaussien à la direction préférée
         double noise_x = generate_random_noise(0.0,0.1);
         double noise_y = generate_random_noise(0.0,0.1);
         struct vecteur noisy_direction = {d_i.i + noise_x, d_i.j + noise_y};
+
+        //on rend le vecteur unitaire
+        noisy_direction.i *= 1 / norm2(noisy_direction);
+        noisy_direction.j *= 1 / norm2(noisy_direction);
 
         poissons[i].v = noisy_direction;    
 
