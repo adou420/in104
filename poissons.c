@@ -23,6 +23,9 @@
 
 double S = 10.0;
 double ALPHA = 4.36;
+double RAYON_REPULSION = 1.0;
+double RAYON_ALIGN = 16;
+double RAYON_ATTRAC = 31;
 
 struct vecteur{
     double i;
@@ -171,8 +174,6 @@ void separation_poissons(struct poisson* poissons) {
 
 
 
-
-
 //Simulation du mouvement des poissons
 
 void simulation(struct poisson* poissons, double tau)
@@ -209,21 +210,21 @@ void simulation(struct poisson* poissons, double tau)
             {
                 int dist = sqrt((v1.i - v2.i) * (v1.i - v2.i) + (v1.j - v2.j) * (v1.j - v2.j)); 
 
-                if (dist <= 1) //Si le poisson est dans la zone de répulsion
+                if (dist <= RAYON_REPULSION) //Si le poisson est dans la zone de répulsion
                 {
-                    zor[nr]=poissons[j];
+                    zor[nr] = poissons[j];
                     nr++;
                 }
 
-                if (1<dist && dist<=16)
+                if (RAYON_REPULSION < dist && dist <= RAYON_ALIGN)
                 {
-                    zoo[no]=poissons[j];
+                    zoo[no] = poissons[j];
                     no++;
                 }
 
-                if (dist>16 && dist<=31)
+                if (dist > RAYON_ALIGN && dist <= RAYON_ATTRAC)
                 {
-                    zoa[na]=poissons[j];
+                    zoa[na] = poissons[j];
                     na++;
                 }
             }
@@ -439,7 +440,9 @@ int main()
     // Sliders initialization
     Slider speedSlider = { { SLIDER_X, SLIDER_Y, SLIDER_WIDTH, SLIDER_HEIGHT }, S, 1.0, 50.0 };   //Slider pour la vitesse
     Slider alphaSlider = { { SLIDER_X, SLIDER_Y - 70, SLIDER_WIDTH, SLIDER_HEIGHT }, ALPHA, 0, 5 };   // Slider pour alpha (angle mort)
-
+    Slider rayon_repulSlider = { { SLIDER_X, SLIDER_Y - 140, SLIDER_WIDTH, SLIDER_HEIGHT }, S, 0.0, 10.0 };   //Slider pour le rayon de la zone de répulsion
+    Slider rayon_alignSlider = { { SLIDER_X, SLIDER_Y - 210, SLIDER_WIDTH, SLIDER_HEIGHT }, S, 0.0, 30.0 };   //Slider pour le rayon de la zone d'alignement
+    Slider rayon_attracSlider = { { SLIDER_X, SLIDER_Y - 280, SLIDER_WIDTH, SLIDER_HEIGHT }, S, 0.0, 60.0 };   //Slider pour le rayon de la zone d'attraction
 
     //Création des poissons 
     struct poisson* poissons = malloc(NB_POISSONS * sizeof(struct poisson));  //tableau contenant tous les poissons
@@ -471,6 +474,18 @@ int main()
             if (handleSliderEvent(&event, &alphaSlider)){
                 ALPHA = alphaSlider.value;
             }
+
+            if (handleSliderEvent(&event, &rayon_repulSlider)){
+                RAYON_REPULSION = rayon_repulSlider.value;
+            }
+
+            if (handleSliderEvent(&event, &rayon_alignSlider)){
+                RAYON_ALIGN = rayon_alignSlider.value;
+            }
+
+            if (handleSliderEvent(&event, &rayon_attracSlider)){
+                RAYON_ATTRAC = rayon_attracSlider.value;
+            }
         }
 
 
@@ -487,12 +502,21 @@ int main()
         }
 
         // Draw the sliders
-        drawSlider(renderer, &speedSlider);
         SDL_Color textColor = {0, 0, 0, 255};  // Black color
+        drawSlider(renderer, &speedSlider);
         renderText(renderer, font, "Vitesse S", SLIDER_X, SLIDER_Y - 30, textColor);
 
         drawSlider(renderer, &alphaSlider);
         renderText(renderer, font, "alpha", SLIDER_X, SLIDER_Y - 100, textColor);
+
+        drawSlider(renderer, &rayon_repulSlider);
+        renderText(renderer, font, "rayon zone de repulsion", SLIDER_X, SLIDER_Y - 170, textColor);
+
+        drawSlider(renderer, &rayon_alignSlider);
+        renderText(renderer, font, "rayon zone d'alignement", SLIDER_X, SLIDER_Y - 240, textColor);
+
+        drawSlider(renderer, &rayon_attracSlider);
+        renderText(renderer, font, "rayon zone d'attraction", SLIDER_X, SLIDER_Y - 310, textColor);
 
 
         SDL_RenderPresent(renderer);
