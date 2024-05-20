@@ -13,12 +13,17 @@
 #define FISH_RATIO 1.549
 #define FISH_WIDTH FISH_RATIO * FISH_HEIGHT
 
+#define PRED_HEIGHT 30
+#define PRED_RATIO 1.549
+#define PRED_WIDTH FISH_RATIO * FISH_HEIGHT
 
 #define PI 3.14159265358979323846
-#define NB_POISSONS 100
 
-#define V_I_INIT sqrt(2)/2;
-#define V_J_INIT sqrt(2)/2;
+#define NB_POISSONS 100
+#define V_I_INIT sqrt(2)/2
+#define V_J_INIT sqrt(2)/2
+#define V_PREDA 5.0 
+#define RAYON_CHASSE 100
 
 
 double S = 10.0;
@@ -36,6 +41,7 @@ struct poisson{
     double x;
     double y;
     struct vecteur v;
+    int type; //0 pour les poissons et 1 pour le prédateur
 };
 
 //fonction qui renvoie la norme d'un vecteur 
@@ -63,12 +69,20 @@ double angle_entre_vecteurs(struct vecteur v1, struct vecteur v2) {
 }
 
 //Fonction qui détermine la direction privilégiée d_i du poisson qu'on considère
-struct vecteur dir_priv_tau (struct poisson p, struct poisson* zor, int nr, struct poisson* zoo, int no, struct poisson* zoa, int na){
+struct vecteur dir_priv_tau (struct poisson p, struct poisson predateur, struct poisson* zor, int nr, struct poisson* zoo, int no, struct poisson* zoa, int na, bool np){
    
     struct vecteur d_r = {0, 0};
     struct vecteur d_o = {0, 0};
     struct vecteur d_a = {0, 0};
     
+    if (np)
+    {
+        struct vecteur d_p = r(predateur,p);
+        d_p.i *= 1/norm2(d_p) ;
+        d_p.j *= 1/norm2(d_p) ;
+        return d_p;
+    }
+
     if (nr == 0 && na == 0 && no == 0) //le poisson n'a aucun voisins
     {
         return p.v;
@@ -176,13 +190,19 @@ void separation_poissons(struct poisson* poissons) {
 
 //Simulation du mouvement des poissons
 
-void simulation(struct poisson* poissons, double tau)
+void simulation(struct poisson* poissons, double tau, struct poisson predateur)
 {        
     //Parcourons l'ensemble des poissons
     for (int i = 0; i < NB_POISSONS;i++) 
     {
         struct vecteur v1 = {poissons[i].x, poissons[i].y}; //vecteur position du poisson i 
 
+        bool np = false;
+        double dist_pred = sqrt((v1.i - predateur.x) * (v1.i - predateur.x) + (v1.j - predateur.y) * (v1.j - predateur.y)); 
+        if (dist_pred < RAYON_CHASSE)
+        {
+            np = true;
+        }
 
         /////// DETERMINONS LES TABLEAUX VOISINS POUR LE POISSON I ////////////
         
@@ -234,7 +254,7 @@ void simulation(struct poisson* poissons, double tau)
 
 
         //Calculons di+tau
-        struct vecteur d_i = dir_priv_tau(poissons[i], zor, nr, zoo, no, zoa, na);   //d_i est unitaire
+        struct vecteur d_i = dir_priv_tau(poissons[i], predateur, zor, nr, zoo, no, zoa, na, np);   //d_i est unitaire
         
         // Ajout de bruit gaussien à la direction préférée
         double noise_x = generate_random_noise(0.0,0.1);
@@ -275,8 +295,9 @@ void simulation(struct poisson* poissons, double tau)
 }
 
 
-void loadTexture(SDL_Renderer *renderer, SDL_Texture **texture) {
-    SDL_Surface *surface = IMG_Load("fish.png");
+void loadTexture(SDL_Renderer *renderer, SDL_Texture **texture, const char* image) {
+    //Texture des poissons
+    SDL_Surface *surface = IMG_Load(image);
     if(surface == NULL) {
         fprintf(stderr, "Failed to load image : %s \n", IMG_GetError());
         SDL_Quit();
@@ -317,7 +338,7 @@ void travers_bords (struct poisson* p) {
 }
 
 // Window
-void render(SDL_Renderer *renderer, SDL_Texture **texture, struct poisson* p) {
+void render(SDL_Renderer *renderer, SDL_Texture **texture, SDL_Texture **pred_texture, struct poisson* p) {
     
     travers_bords(p);
     
@@ -336,11 +357,23 @@ void render(SDL_Renderer *renderer, SDL_Texture **texture, struct poisson* p) {
     {
         theta = 2*PI - theta;
     }
-    SDL_RenderCopyEx(renderer, *texture, NULL, &rect, (180/PI)*theta, NULL, SDL_FLIP_NONE); //rotation de l'image ATTENTION, l'angle doit être en degrés
+    
+    
+    if (p->type == 0)
+    {
+        SDL_RenderCopyEx(renderer, *texture, NULL, &rect, (180/PI)*theta, NULL, SDL_FLIP_NONE); //rotation de l'image ATTENTION, l'angle doit être en degrés
+    }
+
+    else if (p->type == 1)
+    {
+        SDL_RenderCopyEx(renderer, *pred_texture, NULL, &rect, (180 / PI) * theta, NULL, SDL_FLIP_NONE);
+    }
+    
 
     int const x0 = (int)p->x + FISH_WIDTH / 2;
     int const y0 = (int)p->y + FISH_HEIGHT / 2;
     SDL_RenderDrawLine(renderer, x0, y0, x0 + p->v.i * 5, y0 + p->v.j * 5);
+
 }
 
 #define SLIDER_WIDTH 200
@@ -448,9 +481,13 @@ int main()
         SDL_Quit();
         return 1;
     }
-    
+
     SDL_Texture *texture;
-    loadTexture(renderer, &texture);
+    loadTexture(renderer, &texture,"fish.png");
+
+    SDL_Texture *pred_texture;
+    loadTexture(renderer, &pred_texture,"predateur.png");
+
 
     // Load font
     TTF_Font *font = TTF_OpenFont("ArialMT.ttf", 24);
@@ -479,10 +516,19 @@ int main()
         //On donne à chaque poisson un vecteur direction initial 
         poissons[i].v.i = V_I_INIT;
         poissons[i].v.j = V_J_INIT;
+
+        poissons[i].type = 0;
     }
 
+    //Création du prédateur
+    struct poisson predateur;
+    predateur.x = (double)(rand() % WINDOW_WIDTH);
+    predateur.y = (double)(rand() % WINDOW_HEIGHT);
+    predateur.v.i = 1;
+    predateur.v.j = 1;
+    predateur.type = 1;
 
-        SDL_Event event;
+    SDL_Event event;
     bool quit = false;
     while (!quit) {
         while (SDL_PollEvent(&event) != 0) {
@@ -513,15 +559,19 @@ int main()
         }
 
         // Simulation du mouvement des poissons : on met a jour le tableau des poissons
-        simulation(poissons, 0.1);
+        simulation(poissons, 0.1,predateur);
 
-        // Render the updated positions
+        //Simulation du mouvement du prédateur : A FAIRE
+
+        // Rendu des positions mises à jour
         SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
         SDL_RenderClear(renderer);
 
         for (int i = 0; i < NB_POISSONS; i++) {
-            render(renderer, &texture, poissons + i);
+            render(renderer, &texture, &pred_texture, poissons + i);
         }
+
+        render(renderer, &texture, &pred_texture, &predateur);
 
         // Draw the sliders
         SDL_Color textColor = {0, 0, 0, 255};  // Black color
