@@ -4,6 +4,7 @@
 #include <math.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
+#include <SDL2/SDL_ttf.h>
 
 #define WINDOW_WIDTH 1200
 #define WINDOW_HEIGHT 800
@@ -15,7 +16,8 @@
 
 #define PI 3.14159265358979323846
 #define NB_POISSONS 100
-#define S 10.0
+//#define S 10.0
+double S = 10.0;
 #define THETA 0.5
 
 #define V_I_INIT sqrt(2)/2;
@@ -339,12 +341,67 @@ void render(SDL_Renderer *renderer, SDL_Texture **texture, struct poisson* p) {
     SDL_RenderDrawLine(renderer, x0, y0, x0 + p->v.i * 5, y0 + p->v.j * 5);
 }
 
+#define SLIDER_WIDTH 200
+#define SLIDER_HEIGHT 20
+#define SLIDER_X 50
+#define SLIDER_Y 700
+
+typedef struct {
+    SDL_Rect rect;
+    double value;
+    double min;
+    double max;
+} Slider;
+
+void drawSlider(SDL_Renderer *renderer, Slider *slider) {
+    // Draw the background of the slider
+    SDL_SetRenderDrawColor(renderer, 200, 200, 200, 255);
+    SDL_RenderFillRect(renderer, &slider->rect);
+
+    // Draw the current value of the slider
+    int handle_x = slider->rect.x + (int)((slider->value - slider->min) / (slider->max - slider->min) * slider->rect.w);
+    SDL_Rect handle = { handle_x - 5, slider->rect.y - 5, 10, slider->rect.h + 10 };
+    SDL_SetRenderDrawColor(renderer, 100, 100, 255, 255);
+    SDL_RenderFillRect(renderer, &handle);
+}
+
+bool handleSliderEvent(SDL_Event *event, Slider *slider) {
+    if (event->type == SDL_MOUSEBUTTONDOWN || event->type == SDL_MOUSEMOTION) {
+        int x = event->button.x;
+        int y = event->button.y;
+
+        if (x >= slider->rect.x && x <= slider->rect.x + slider->rect.w &&
+            y >= slider->rect.y && y <= slider->rect.y + slider->rect.h) {
+            slider->value = slider->min + (double)(x - slider->rect.x) / slider->rect.w * (slider->max - slider->min);
+            return true;
+        }
+    }
+    return false;
+}
+
+void renderText(SDL_Renderer *renderer, TTF_Font *font, const char *text, int x, int y, SDL_Color color) {
+    SDL_Surface *surface = TTF_RenderText_Blended(font, text, color);
+    SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surface);
+    SDL_Rect dstrect = { x, y, surface->w, surface->h };
+    SDL_RenderCopy(renderer, texture, NULL, &dstrect);
+    SDL_FreeSurface(surface);
+    SDL_DestroyTexture(texture);
+}
+
+
+
 int main()
 {
     if (SDL_Init (SDL_INIT_VIDEO) < 0) {
         fprintf(stderr, "SDL initialization failed : %s \n", SDL_GetError());
         return 1;
     }
+    if (TTF_Init() == -1) {
+    fprintf(stderr, "SDL_ttf initialization failed: %s\n", TTF_GetError());
+    SDL_Quit();
+    return 1;
+    }  
+    
 
     SDL_Window *window = SDL_CreateWindow("N-Body Simulation ",
                                           SDL_WINDOWPOS_UNDEFINED, 
@@ -365,10 +422,21 @@ int main()
         SDL_Quit();
         return 1;
     }
+    
     SDL_Texture *texture;
     loadTexture(renderer, &texture);
 
-    
+    // Load font
+    TTF_Font *font = TTF_OpenFont("/root/in104/ArialMT.ttf", 24);
+    if (font == NULL) {
+        fprintf(stderr, "Failed to load font: %s\n", TTF_GetError());
+        TTF_Quit();
+        SDL_Quit();
+        return 1;
+    }
+
+    // Slider initialization
+    Slider speedSlider = { { SLIDER_X, SLIDER_Y, SLIDER_WIDTH, SLIDER_HEIGHT }, S, 1.0, 20.0 };
 
     //Création des poissons 
     struct poisson* poissons = malloc(NB_POISSONS * sizeof(struct poisson));  //tableau contenant tous les poissons
@@ -391,6 +459,11 @@ int main()
             if (event.type == SDL_QUIT) {
                 quit = true;
             }
+
+            // Handle slider events
+            if (handleSliderEvent(&event, &speedSlider)) {
+                S = speedSlider.value;
+            }
         }
 
 
@@ -406,14 +479,20 @@ int main()
             render(renderer, &texture, poissons + i);
         }
 
+        // Draw the slider
+        drawSlider(renderer, &speedSlider);
+        SDL_Color textColor = {0, 0, 0, 255};  // Black color
+        renderText(renderer, font, "Vitesse S", SLIDER_X, SLIDER_Y - 30, textColor);
+
+
         SDL_RenderPresent(renderer);
 
         // Delay to control the frame rate
         // SDL_Delay(30);
     }
 
-    
-
+    TTF_CloseFont(font);
+    TTF_Quit();
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     SDL_Quit();

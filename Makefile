@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -std=c99 -g
-LDFLAGS = -lSDL2 -lm -lSDL2_image
+LDFLAGS = -lSDL2 -lm -lSDL2_image -lSDL2_ttf
 SRC = poissons.c
 EXECUTABLE = output
 
