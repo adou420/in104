@@ -16,12 +16,13 @@
 
 #define PI 3.14159265358979323846
 #define NB_POISSONS 100
-//#define S 10.0
-double S = 10.0;
-#define THETA 0.5
 
 #define V_I_INIT sqrt(2)/2;
 #define V_J_INIT sqrt(2)/2;
+
+
+double S = 10.0;
+double ALPHA = 4.36;
 
 struct vecteur{
     double i;
@@ -174,7 +175,7 @@ void separation_poissons(struct poisson* poissons) {
 
 //Simulation du mouvement des poissons
 
-void simulation(struct poisson* poissons, double tau, double alpha)
+void simulation(struct poisson* poissons, double tau)
 {        
     //Parcourons l'ensemble des poissons
     for (int i = 0; i < NB_POISSONS;i++) 
@@ -201,7 +202,7 @@ void simulation(struct poisson* poissons, double tau, double alpha)
             //Vérifions si le poisson voisin est dans l'angle mort
             bool hors_angle_mort = true;
             double angle = angle_entre_vecteurs(poissons[i].v,r(poissons[i],poissons[j]));
-            if (fabs(angle) > PI - alpha/2)
+            if (fabs(angle) > PI - ALPHA/2)
             {hors_angle_mort = false;}
             
             if ( j != i && hors_angle_mort)
@@ -325,16 +326,16 @@ void render(SDL_Renderer *renderer, SDL_Texture **texture, struct poisson* p) {
 
     // Rotation
     struct vecteur const vecteur_horizontal = {1,0};
-    double alpha = angle_entre_vecteurs(p->v,vecteur_horizontal);
-    if (alpha < 0) 
+    double theta = angle_entre_vecteurs(p->v,vecteur_horizontal);
+    if (theta < 0) 
     {
-        alpha *= -1;
+        theta *= -1;
     } 
     else
     {
-        alpha = 2*PI - alpha;
+        theta = 2*PI - theta;
     }
-    SDL_RenderCopyEx(renderer, *texture, NULL, &rect, (180/PI)*alpha, NULL, SDL_FLIP_NONE); //rotation de l'image ATTENTION, l'angle doit être en degrés
+    SDL_RenderCopyEx(renderer, *texture, NULL, &rect, (180/PI)*theta, NULL, SDL_FLIP_NONE); //rotation de l'image ATTENTION, l'angle doit être en degrés
 
     int const x0 = (int)p->x + FISH_WIDTH / 2;
     int const y0 = (int)p->y + FISH_HEIGHT / 2;
@@ -351,7 +352,7 @@ typedef struct {
     double value;
     double min;
     double max;
-} Slider;
+}Slider;
 
 void drawSlider(SDL_Renderer *renderer, Slider *slider) {
     // Draw the background of the slider
@@ -427,7 +428,7 @@ int main()
     loadTexture(renderer, &texture);
 
     // Load font
-    TTF_Font *font = TTF_OpenFont("/root/in104/ArialMT.ttf", 24);
+    TTF_Font *font = TTF_OpenFont("ArialMT.ttf", 24);
     if (font == NULL) {
         fprintf(stderr, "Failed to load font: %s\n", TTF_GetError());
         TTF_Quit();
@@ -435,8 +436,10 @@ int main()
         return 1;
     }
 
-    // Slider initialization
-    Slider speedSlider = { { SLIDER_X, SLIDER_Y, SLIDER_WIDTH, SLIDER_HEIGHT }, S, 1.0, 20.0 };
+    // Sliders initialization
+    Slider speedSlider = { { SLIDER_X, SLIDER_Y, SLIDER_WIDTH, SLIDER_HEIGHT }, S, 1.0, 20.0 };   //Slider pour la vitesse
+    Slider alphaSlider = { { SLIDER_X, SLIDER_Y - 70, SLIDER_WIDTH, SLIDER_HEIGHT }, ALPHA, 0, 5 };   // Slider pour alpha (angle mort)
+
 
     //Création des poissons 
     struct poisson* poissons = malloc(NB_POISSONS * sizeof(struct poisson));  //tableau contenant tous les poissons
@@ -463,12 +466,13 @@ int main()
             // Handle slider events
             if (handleSliderEvent(&event, &speedSlider)) {
                 S = speedSlider.value;
+                ALPHA = alphaSlider.value;
             }
         }
 
 
         //Simulation du mouvement des poissons : on met a jour le tableau des poissons
-        simulation(poissons, 0.1, 4.36);
+        simulation(poissons, 0.1);
 
         // Render the updated positions
         SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
@@ -479,10 +483,13 @@ int main()
             render(renderer, &texture, poissons + i);
         }
 
-        // Draw the slider
+        // Draw the sliders
         drawSlider(renderer, &speedSlider);
         SDL_Color textColor = {0, 0, 0, 255};  // Black color
         renderText(renderer, font, "Vitesse S", SLIDER_X, SLIDER_Y - 30, textColor);
+
+        drawSlider(renderer, &alphaSlider);
+        renderText(renderer, font, "alpha", SLIDER_X, SLIDER_Y - 100, textColor);
 
 
         SDL_RenderPresent(renderer);
