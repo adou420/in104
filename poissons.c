@@ -13,7 +13,7 @@
 #define FISH_RATIO 1.549
 #define FISH_WIDTH FISH_RATIO * FISH_HEIGHT
 
-#define PRED_HEIGHT 60
+#define PRED_HEIGHT 20
 #define PRED_RATIO 1.549
 #define PRED_WIDTH FISH_RATIO * FISH_HEIGHT
 
@@ -22,7 +22,7 @@
 #define NB_POISSONS 100
 #define V_I_INIT sqrt(2)/2
 #define V_J_INIT sqrt(2)/2
-#define V_PREDA 10.0 
+#define V_PREDA 20.0 
 #define RAYON_CHASSE 100
 
 
@@ -186,28 +186,26 @@ void separation_poissons(struct poisson* poissons) {
     return;
 }
 
-//Fonction pour générer un mouvement aléatoire pour le prédateur
-void mvt_alea(struct poisson* predateur, double tau) {
-    int temps_depuis_dernier_chgt = 0; // Variable pour suivre le temps écoulé
-    int seuil_temps = 1000; // Seuil de temps pour changer de direction
-
-    // Incrémente le temps écoulé depuis le dernier changement
-    temps_depuis_dernier_chgt++;
-
-    // Vérifie si le temps écoulé dépasse le seuil
-    if (temps_depuis_dernier_chgt > seuil_temps) {
-        // Génère un angle aléatoire
-        double random_angle = ((double)rand() / RAND_MAX) * 2 * PI;
-        
-        // Applique une rotation à la direction du prédateur
-        predateur->v.i = cos(random_angle);
-        predateur->v.j = sin(random_angle);
-
-        // Réinitialise le temps écoulé
-        temps_depuis_dernier_chgt = 0;
+//Fonction pour générer le mouvement du prédateur
+void mvt_predateur(struct poisson* predateur, struct poisson* poissons, double tau) {
+    
+    //Déterminons le poisson le plus proche 
+    struct poisson poisson_le_plus_proche = poissons[0];
+    double min_distance = sqrt((predateur->x - poissons[0].x) * (predateur->x - poissons[0].x) + (predateur->y - poissons[0].y) * (predateur->y - poissons[0].y));
+    for (int i=1; i < NB_POISSONS; i++){
+        double distance = sqrt((predateur->x - poissons[i].x) * (predateur->x - poissons[i].x) + (predateur->y - poissons[i].y) * (predateur->y - poissons[i].y));
+        if (distance < min_distance){
+            poisson_le_plus_proche = poissons[i];
+            min_distance = distance;
+        }
     }
 
-    // Déplace le prédateur dans sa direction actuelle
+    //Mettre à jour la direction du prédateur pour qu'il aille vers le poisson le plus proche
+    predateur->v.i = r(*predateur, poisson_le_plus_proche).i/norm2(r(*predateur, poisson_le_plus_proche));
+    predateur->v.j = r(*predateur, poisson_le_plus_proche).j/norm2(r(*predateur, poisson_le_plus_proche));
+
+
+    // Déplace le prédateur dans la nouvelle direction 
     predateur->x += predateur->v.i * tau * V_PREDA;
     predateur->y += predateur->v.j * tau * V_PREDA;
 }
@@ -318,7 +316,7 @@ void simulation(struct poisson* poissons, double tau, struct poisson* predateur)
     // Faisons en sorte que les poissons ne se superposent pas
     //separation_poissons(poissons);
 
-    mvt_alea(predateur, tau);
+    mvt_predateur(predateur, poissons, tau);
     
 }
 
@@ -343,24 +341,31 @@ void loadTexture(SDL_Renderer *renderer, SDL_Texture **texture, const char* imag
 }
 
 void travers_bords (struct poisson* p) {
-    if (p->v.j < 0 && p->y + FISH_HEIGHT < 0)
+
+    int HEIGHT = FISH_HEIGHT;
+    int WIDTH = FISH_WIDTH;
+    if (p->type == 1){
+        HEIGHT = PRED_HEIGHT;
+        WIDTH = PRED_WIDTH;
+    }
+    if (p->v.j < 0 && p->y + HEIGHT < 0)
     {
-        p->y = WINDOW_HEIGHT + FISH_HEIGHT;
+        p->y = WINDOW_HEIGHT + HEIGHT;
     }
 
     if (p->v.j > 0 && p->y > WINDOW_HEIGHT)
     {
-        p->y = -FISH_HEIGHT;
+        p->y = -HEIGHT;
     }
 
-    if (p->v.i < 0 && p->x + FISH_WIDTH < 0)
+    if (p->v.i < 0 && p->x + WIDTH < 0)
     {
-        p->x = WINDOW_WIDTH + FISH_WIDTH;
+        p->x = WINDOW_WIDTH + WIDTH;
     }
 
     if (p->v.i > 0 && p->x > WINDOW_WIDTH)
     {
-        p->x = -FISH_WIDTH;
+        p->x = -WIDTH;
     }
     return;
 }
