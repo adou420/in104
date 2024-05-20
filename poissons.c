@@ -13,7 +13,7 @@
 #define FISH_RATIO 1.549
 #define FISH_WIDTH FISH_RATIO * FISH_HEIGHT
 
-#define PRED_HEIGHT 30
+#define PRED_HEIGHT 60
 #define PRED_RATIO 1.549
 #define PRED_WIDTH FISH_RATIO * FISH_HEIGHT
 
@@ -22,7 +22,7 @@
 #define NB_POISSONS 100
 #define V_I_INIT sqrt(2)/2
 #define V_J_INIT sqrt(2)/2
-#define V_PREDA 5.0 
+#define V_PREDA 10.0 
 #define RAYON_CHASSE 100
 
 
@@ -186,11 +186,37 @@ void separation_poissons(struct poisson* poissons) {
     return;
 }
 
+//Fonction pour générer un mouvement aléatoire pour le prédateur
+void mvt_alea(struct poisson* predateur, double tau) {
+    int temps_depuis_dernier_chgt = 0; // Variable pour suivre le temps écoulé
+    int seuil_temps = 1000; // Seuil de temps pour changer de direction
+
+    // Incrémente le temps écoulé depuis le dernier changement
+    temps_depuis_dernier_chgt++;
+
+    // Vérifie si le temps écoulé dépasse le seuil
+    if (temps_depuis_dernier_chgt > seuil_temps) {
+        // Génère un angle aléatoire
+        double random_angle = ((double)rand() / RAND_MAX) * 2 * PI;
+        
+        // Applique une rotation à la direction du prédateur
+        predateur->v.i = cos(random_angle);
+        predateur->v.j = sin(random_angle);
+
+        // Réinitialise le temps écoulé
+        temps_depuis_dernier_chgt = 0;
+    }
+
+    // Déplace le prédateur dans sa direction actuelle
+    predateur->x += predateur->v.i * tau * V_PREDA;
+    predateur->y += predateur->v.j * tau * V_PREDA;
+}
+
 
 
 //Simulation du mouvement des poissons
 
-void simulation(struct poisson* poissons, double tau, struct poisson predateur)
+void simulation(struct poisson* poissons, double tau, struct poisson* predateur)
 {        
     //Parcourons l'ensemble des poissons
     for (int i = 0; i < NB_POISSONS;i++) 
@@ -198,7 +224,7 @@ void simulation(struct poisson* poissons, double tau, struct poisson predateur)
         struct vecteur v1 = {poissons[i].x, poissons[i].y}; //vecteur position du poisson i 
 
         bool np = false;
-        double dist_pred = sqrt((v1.i - predateur.x) * (v1.i - predateur.x) + (v1.j - predateur.y) * (v1.j - predateur.y)); 
+        double dist_pred = sqrt((v1.i - predateur->x) * (v1.i - predateur->x) + (v1.j - predateur->y) * (v1.j - predateur->y)); 
         if (dist_pred < RAYON_CHASSE)
         {
             np = true;
@@ -254,7 +280,7 @@ void simulation(struct poisson* poissons, double tau, struct poisson predateur)
 
 
         //Calculons di+tau
-        struct vecteur d_i = dir_priv_tau(poissons[i], predateur, zor, nr, zoo, no, zoa, na, np);   //d_i est unitaire
+        struct vecteur d_i = dir_priv_tau(poissons[i], *predateur, zor, nr, zoo, no, zoa, na, np);   //d_i est unitaire
         
         // Ajout de bruit gaussien à la direction préférée
         double noise_x = generate_random_noise(0.0,0.1);
@@ -291,6 +317,8 @@ void simulation(struct poisson* poissons, double tau, struct poisson predateur)
 
     // Faisons en sorte que les poissons ne se superposent pas
     //separation_poissons(poissons);
+
+    mvt_alea(predateur, tau);
     
 }
 
@@ -559,9 +587,8 @@ int main()
         }
 
         // Simulation du mouvement des poissons : on met a jour le tableau des poissons
-        simulation(poissons, 0.1,predateur);
+        simulation(poissons, 0.1,&predateur);
 
-        //Simulation du mouvement du prédateur : A FAIRE
 
         // Rendu des positions mises à jour
         SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
