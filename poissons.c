@@ -26,7 +26,7 @@
 #define RAYON_CHASSE 100
 
 
-double S = 10.0;
+double S = 30.0;
 double ALPHA = 4.36;
 double RAYON_REPULSION = 1.0;
 double RAYON_ALIGN = 16;
