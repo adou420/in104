@@ -37,12 +37,7 @@ double norm2(struct vecteur v){
     return sqrt(v.i*v.i + v.j*v.j);
 }
 
-//fonction qui renvoie la distance entre deux positions
-double distance(struct vecteur v1, struct vecteur v2){
-    return sqrt((v2.i - v1.i) * (v2.i - v1.i) + (v2.j - v1.j) * (v2.j - v1.j));
-}
-
-//fonction qui renvoie le vecteur unitaire liant deux poissons
+//fonction qui renvoie le vecteur liant deux poissons
 struct vecteur r(struct poisson pi, struct poisson pj){
     struct vecteur rij = {pj.x-pi.x, pj.y-pi.y};
     return rij;
@@ -59,17 +54,16 @@ struct vecteur somme_vecteurs(struct vecteur vi, struct vecteur vj)
 
 double angle_entre_vecteurs(struct vecteur v1, struct vecteur v2) {
     return atan2(v2.j * v1.i - v2.i * v1.j, v2.i * v1.i + v2.j * v1.j);  //renvoie un angle entre -pi et pi
-
 }
 
 //Fonction qui détermine la direction privilégiée d_i du poisson qu'on considère
-struct vecteur dir_priv_tau(struct poisson p, struct poisson* zor, int nr, struct poisson* zoo, int no, struct poisson* zoa, int na){
+struct vecteur dir_priv_tau (struct poisson p, struct poisson* zor, int nr, struct poisson* zoo, int no, struct poisson* zoa, int na){
    
     struct vecteur d_r = {0, 0};
     struct vecteur d_o = {0, 0};
     struct vecteur d_a = {0, 0};
     
-    if (nr ==0 && na ==0 && no==0) //le poisson n'a aucun voisins
+    if (nr == 0 && na == 0 && no == 0) //le poisson n'a aucun voisins
     {
         return p.v;
     }
@@ -143,8 +137,8 @@ double generate_random_noise(double mean, double stddev) {
 
 // Faisons en sorte que les poissons ne se superposent pas
 
-void resolve_collision(struct poisson* p1, struct poisson* p2) {
-    double distance = sqrt((p1->x - p2->x) * (p1->x - p2->x) + (p1->y - p2->y) * (p1->y - p2->y));  // redondant avec la fonction distance, il va falloir arranger ça
+void separateur_2poissons(struct poisson* p1, struct poisson* p2) {
+    double distance = sqrt((p1->x - p2->x) * (p1->x - p2->x) + (p1->y - p2->y) * (p1->y - p2->y));  
     double min_distance = FISH_WIDTH;
 
     if (distance < min_distance) {
@@ -154,7 +148,7 @@ void resolve_collision(struct poisson* p1, struct poisson* p2) {
         double angle = atan2(dy, dx);
         double separation = min_distance - distance;
 
-        // Déplacer les poissons pour les séparer
+        // Déplaçons les poissons pour les séparer
         p1->x -= cos(angle) * separation / 2;
         p1->y -= sin(angle) * separation / 2;
         p2->x += cos(angle) * separation / 2;
@@ -163,10 +157,10 @@ void resolve_collision(struct poisson* p1, struct poisson* p2) {
     return;
 }
 
-void check_collisions(struct poisson* poissons) {
+void separation_poissons(struct poisson* poissons) {
     for (int i = 0; i < NB_POISSONS - 1; i++) {
         for (int j = i + 1; j < NB_POISSONS; j++) {
-            resolve_collision(&poissons[i], &poissons[j]);
+            separateur_2poissons(&poissons[i], &poissons[j]);
         }
     }
     return;
@@ -210,7 +204,7 @@ void simulation(struct poisson* poissons, double tau, double alpha)
             
             if ( j != i && hors_angle_mort)
             {
-                int dist = distance(v1, v2);
+                int dist = sqrt((v1.i - v2.i) * (v1.i - v2.i) + (v1.j - v2.j) * (v1.j - v2.j)); 
 
                 if (dist <= 1) //Si le poisson est dans la zone de répulsion
                 {
@@ -255,12 +249,12 @@ void simulation(struct poisson* poissons, double tau, double alpha)
         
 
         // Vérifions si le poisson atteint le bord de la fenêtre et inversons sa direction si nécessaire
-        if (nv_x < 0 || nv_x + FISH_WIDTH > WINDOW_WIDTH) {
-            poissons[i].v.i *= -1;
-        }
-        if (nv_y < 0 || nv_y + FISH_HEIGHT > WINDOW_HEIGHT) {
-            poissons[i].v.j *= -1;
-        }
+        // if (nv_x < 0 || nv_x + FISH_WIDTH > WINDOW_WIDTH) {
+        //     poissons[i].v.i *= -1;
+        // }
+        // if (nv_y < 0 || nv_y + FISH_HEIGHT > WINDOW_HEIGHT) {
+        //     poissons[i].v.j *= -1;
+        // }
 
         // Mettons à jour les positions des poissons
         poissons[i].x = nv_x;
@@ -272,7 +266,7 @@ void simulation(struct poisson* poissons, double tau, double alpha)
     }
 
     // Faisons en sorte que les poissons ne se superposent pas
-    //check_collisions(poissons);
+    //separation_poissons(poissons);
     
 }
 
@@ -295,28 +289,33 @@ void loadTexture(SDL_Renderer *renderer, SDL_Texture **texture) {
     }
 }
 
+void travers_bords (struct poisson* p) {
+    if (p->v.j < 0 && p->y + FISH_HEIGHT < 0)
+    {
+        p->y = WINDOW_HEIGHT + FISH_HEIGHT;
+    }
+
+    if (p->v.j > 0 && p->y > WINDOW_HEIGHT)
+    {
+        p->y = -FISH_HEIGHT;
+    }
+
+    if (p->v.i < 0 && p->x + FISH_WIDTH < 0)
+    {
+        p->x = WINDOW_WIDTH + FISH_WIDTH;
+    }
+
+    if (p->v.i > 0 && p->x > WINDOW_WIDTH)
+    {
+        p->x = -FISH_WIDTH;
+    }
+    return;
+}
+
 // Window
 void render(SDL_Renderer *renderer, SDL_Texture **texture, struct poisson* p) {
-    // if (p->v.j < 0 && p->y + FISH_HEIGHT < 0)
-    // {
-    //     p->y = WINDOW_HEIGHT + FISH_HEIGHT;
-    // }
-
-    // if (p->v.j > 0 && p->y > WINDOW_HEIGHT)
-    // {
-    //     p->y = -FISH_HEIGHT;
-    // }
-
-    // if (p->v.i < 0 && p->x + FISH_WIDTH < 0)
-    // {
-    //     p->x = WINDOW_WIDTH + FISH_WIDTH;
-    // }
-
-    // if (p->v.i > 0 && p->x > WINDOW_WIDTH)
-    // {
-    //     p->x = -FISH_WIDTH;
-    // }
-
+    
+    travers_bords(p);
     
     SDL_Rect rect = {(int)p->x, (int)p->y, FISH_WIDTH, FISH_HEIGHT };
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
@@ -384,9 +383,6 @@ int main()
         poissons[i].v.j = V_J_INIT;
     }
 
-    //On crée un tableau pour garder en mémoire les anciennes positions + directions des poissons
-    struct poisson * ancien_poissons = malloc(NB_POISSONS*sizeof(struct poisson));
-
 
     SDL_Event event;
     bool quit = false;
@@ -397,15 +393,11 @@ int main()
             }
         }
 
-        // On garde en mémoire l'ancien tableau de poissons
-        memcpy(ancien_poissons,poissons,NB_POISSONS*sizeof(struct poisson));
-
 
         //Simulation du mouvement des poissons : on met a jour le tableau des poissons
         simulation(poissons, 0.1, 4.36);
 
         // Render the updated positions
-
         SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
         SDL_RenderClear(renderer);
         // SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255);
@@ -427,6 +419,5 @@ int main()
     SDL_Quit();
 
     free(poissons);
-    free(ancien_poissons);
     return 0;
 }
