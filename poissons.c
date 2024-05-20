@@ -437,7 +437,7 @@ int main()
     }
 
     // Sliders initialization
-    Slider speedSlider = { { SLIDER_X, SLIDER_Y, SLIDER_WIDTH, SLIDER_HEIGHT }, S, 1.0, 20.0 };   //Slider pour la vitesse
+    Slider speedSlider = { { SLIDER_X, SLIDER_Y, SLIDER_WIDTH, SLIDER_HEIGHT }, S, 1.0, 50.0 };   //Slider pour la vitesse
     Slider alphaSlider = { { SLIDER_X, SLIDER_Y - 70, SLIDER_WIDTH, SLIDER_HEIGHT }, ALPHA, 0, 5 };   // Slider pour alpha (angle mort)
 
 
@@ -466,6 +466,9 @@ int main()
             // Handle slider events
             if (handleSliderEvent(&event, &speedSlider)) {
                 S = speedSlider.value;
+            }
+
+            if (handleSliderEvent(&event, &alphaSlider)){
                 ALPHA = alphaSlider.value;
             }
         }
