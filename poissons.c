@@ -355,6 +355,9 @@ typedef struct {
     double max;
 }Slider;
 
+bool sliderActive = false;
+Slider *activeSlider = NULL;
+
 void drawSlider(SDL_Renderer *renderer, Slider *slider) {
     // Draw the background of the slider
     SDL_SetRenderDrawColor(renderer, 200, 200, 200, 255);
@@ -367,19 +370,40 @@ void drawSlider(SDL_Renderer *renderer, Slider *slider) {
     SDL_RenderFillRect(renderer, &handle);
 }
 
-bool handleSliderEvent(SDL_Event *event, Slider *slider) {
-    if (event->type == SDL_MOUSEBUTTONDOWN || event->type == SDL_MOUSEMOTION) {
-        int x = event->button.x;
-        int y = event->button.y;
 
-        if (x >= slider->rect.x && x <= slider->rect.x + slider->rect.w &&
-            y >= slider->rect.y && y <= slider->rect.y + slider->rect.h) {
-            slider->value = slider->min + (double)(x - slider->rect.x) / slider->rect.w * (slider->max - slider->min);
-            return true;
-        }
+bool handleSliderEvent(SDL_Event *event, Slider *slider, bool *sliderActive, Slider **activeSlider) {
+    int x = event->button.x;
+    int y = event->button.y;
+
+    switch (event->type) {
+        case SDL_MOUSEBUTTONDOWN:
+            if (x >= slider->rect.x && x <= slider->rect.x + slider->rect.w &&
+                y >= slider->rect.y && y <= slider->rect.y + slider->rect.h) {
+                *sliderActive = true;
+                *activeSlider = slider;
+                slider->value = slider->min + (double)(x - slider->rect.x) / slider->rect.w * (slider->max - slider->min);
+                return true;
+            }
+            break;
+
+        case SDL_MOUSEBUTTONUP:
+            if (*sliderActive && *activeSlider == slider) {
+                *sliderActive = false;
+                *activeSlider = NULL;
+                return true;
+            }
+            break;
+
+        case SDL_MOUSEMOTION:
+            if (*sliderActive && *activeSlider == slider) {
+                slider->value = slider->min + (double)(x - slider->rect.x) / slider->rect.w * (slider->max - slider->min);
+                return true;
+            }
+            break;
     }
     return false;
 }
+
 
 void renderText(SDL_Renderer *renderer, TTF_Font *font, const char *text, int x, int y, SDL_Color color) {
     SDL_Surface *surface = TTF_RenderText_Blended(font, text, color);
@@ -458,7 +482,7 @@ int main()
     }
 
 
-    SDL_Event event;
+        SDL_Event event;
     bool quit = false;
     while (!quit) {
         while (SDL_PollEvent(&event) != 0) {
@@ -467,35 +491,33 @@ int main()
             }
 
             // Handle slider events
-            if (handleSliderEvent(&event, &speedSlider)) {
+            if (handleSliderEvent(&event, &speedSlider, &sliderActive, &activeSlider)) {
                 S = speedSlider.value;
             }
 
-            if (handleSliderEvent(&event, &alphaSlider)){
+            if (handleSliderEvent(&event, &alphaSlider, &sliderActive, &activeSlider)){
                 ALPHA = alphaSlider.value;
             }
 
-            if (handleSliderEvent(&event, &rayon_repulSlider)){
+            if (handleSliderEvent(&event, &rayon_repulSlider, &sliderActive, &activeSlider)){
                 RAYON_REPULSION = rayon_repulSlider.value;
             }
 
-            if (handleSliderEvent(&event, &rayon_alignSlider)){
+            if (handleSliderEvent(&event, &rayon_alignSlider, &sliderActive, &activeSlider)){
                 RAYON_ALIGN = rayon_alignSlider.value;
             }
 
-            if (handleSliderEvent(&event, &rayon_attracSlider)){
+            if (handleSliderEvent(&event, &rayon_attracSlider, &sliderActive, &activeSlider)){
                 RAYON_ATTRAC = rayon_attracSlider.value;
             }
         }
 
-
-        //Simulation du mouvement des poissons : on met a jour le tableau des poissons
+        // Simulation du mouvement des poissons : on met a jour le tableau des poissons
         simulation(poissons, 0.1);
 
         // Render the updated positions
         SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
         SDL_RenderClear(renderer);
-        // SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255);
 
         for (int i = 0; i < NB_POISSONS; i++) {
             render(renderer, &texture, poissons + i);
@@ -518,12 +540,11 @@ int main()
         drawSlider(renderer, &rayon_attracSlider);
         renderText(renderer, font, "rayon zone d'attraction", SLIDER_X, SLIDER_Y - 310, textColor);
 
-
         SDL_RenderPresent(renderer);
-
-        // Delay to control the frame rate
-        // SDL_Delay(30);
     }
+    
+    // Delay to control the frame rate
+    // SDL_Delay(30);
 
     TTF_CloseFont(font);
     TTF_Quit();
