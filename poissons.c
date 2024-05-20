@@ -438,7 +438,7 @@ int main()
     }
 
     // Sliders initialization
-    Slider speedSlider = { { SLIDER_X, SLIDER_Y, SLIDER_WIDTH, SLIDER_HEIGHT }, S, 1.0, 50.0 };   //Slider pour la vitesse
+    Slider speedSlider = { { SLIDER_X, SLIDER_Y, SLIDER_WIDTH, SLIDER_HEIGHT }, S, 1.0, 80.0 };   //Slider pour la vitesse
     Slider alphaSlider = { { SLIDER_X, SLIDER_Y - 70, SLIDER_WIDTH, SLIDER_HEIGHT }, ALPHA, 0, 5 };   // Slider pour alpha (angle mort)
     Slider rayon_repulSlider = { { SLIDER_X, SLIDER_Y - 140, SLIDER_WIDTH, SLIDER_HEIGHT }, S, 0.0, 20.0 };   //Slider pour le rayon de la zone de répulsion
     Slider rayon_alignSlider = { { SLIDER_X, SLIDER_Y - 210, SLIDER_WIDTH, SLIDER_HEIGHT }, S, RAYON_REPULSION, 60.0 };   //Slider pour le rayon de la zone d'alignement
