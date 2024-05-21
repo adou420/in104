@@ -28,7 +28,7 @@
 
 double S = 30.0;
 double ALPHA = 4.36;
-double RAYON_REPULSION = 1.0;
+double RAYON_REPULSION = 0.5;
 double RAYON_ALIGN = 16;
 double RAYON_ATTRAC = 31;
 
@@ -297,12 +297,12 @@ void simulation(struct poisson* poissons, double tau, struct poisson* predateur)
         
 
         // Vérifions si le poisson atteint le bord de la fenêtre et inversons sa direction si nécessaire
-        // if (nv_x < 0 || nv_x + FISH_WIDTH > WINDOW_WIDTH) {
-        //     poissons[i].v.i *= -1;
-        // }
-        // if (nv_y < 0 || nv_y + FISH_HEIGHT > WINDOW_HEIGHT) {
-        //     poissons[i].v.j *= -1;
-        // }
+        if (nv_x < 0 || nv_x + FISH_WIDTH > WINDOW_WIDTH) {
+            poissons[i].v.i *= -1;
+        }
+        if (nv_y < 0 || nv_y + FISH_HEIGHT > WINDOW_HEIGHT) {
+            poissons[i].v.j *= -1;
+        }
 
         // Mettons à jour les positions des poissons
         poissons[i].x = nv_x;
@@ -370,14 +370,13 @@ void travers_bords (struct poisson* p) {
     return;
 }
 
-// Window
+//Window
 void render(SDL_Renderer *renderer, SDL_Texture **texture, SDL_Texture **pred_texture, struct poisson* p) {
     
-    travers_bords(p);
+    //travers_bords(p);
     
     SDL_Rect rect = {(int)p->x, (int)p->y, FISH_WIDTH, FISH_HEIGHT };
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-    // SDL_RenderCopy(renderer, *texture, NULL, &rect);
 
     // Rotation
     struct vecteur const vecteur_horizontal = {1,0};
@@ -630,6 +629,7 @@ int main()
 
     TTF_CloseFont(font);
     TTF_Quit();
+    
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     SDL_Quit();
